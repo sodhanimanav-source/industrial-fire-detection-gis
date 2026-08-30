@@ -6,7 +6,7 @@ An AI/ML & Satellite-driven spatial intelligence dashboard engineered for real-t
 
 ## 🚀 Live Demo
 
-* **Web App (Interactive UI):** https://industrial-fire-detection-gis.vercel.app
+* **Web App (Interactive UI):** https://industrial-fire-detection-gis.netlify.app
 * **API Documentation & OpenAPI:** https://industrial-fire-detection-gis.onrender.com/docs
 * **Live Health & Telemetry Feed:** https://industrial-fire-detection-gis.onrender.com/api/hotspots
 
@@ -18,7 +18,7 @@ An AI/ML & Satellite-driven spatial intelligence dashboard engineered for real-t
 * **Spatial Ingestion & Feeds:** NASA FIRMS API (VIIRS NOAA-20, Suomi-NPP, MODIS sensors)
 * **Machine Learning & Analytics:** Scikit-Learn, Isolation Forest (Anomaly Scoring), Random Forest Spatial Classifier
 * **Frontend & WebGIS:** React 18, Vite, React-Leaflet, Tailwind CSS, Canvas Vector Rendering
-* **Deployment & CI/CD:** Vercel (Edge Frontend), Render Cloud PaaS (Auto-scaling Backend)
+* **Deployment & CI/CD:** Netlify (Edge Frontend), Render Cloud PaaS (Auto-scaling Backend)
 
 ---
 
