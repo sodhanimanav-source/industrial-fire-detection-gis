@@ -1,27 +1,27 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from "react";
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
+﻿import React, { useState, useEffect, useMemo } from "react";
+import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 const API_BASE = "https://industrial-fire-detection-gis.onrender.com/api";
 
 const MAP_THEMES = {
   esriDark: {
-    name: "Tactical Dark (High Precision)",
+    name: "Tactical Dark (Esri Precision)",
     base: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
     labels: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
     attrib: "Esri, HERE, Garmin, © OpenStreetMap contributors"
   },
-  osm: {
-    name: "Standard Clean Street",
-    base: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    labels: null,
-    attrib: "© OpenStreetMap contributors"
-  },
   satellite: {
-    name: "Esri Satellite Imagery",
+    name: "Satellite Imagery & City Labels",
     base: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     labels: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
     attrib: "Esri, Maxar, Earthstar Geographics"
+  },
+  osm: {
+    name: "Standard Clean Street (OSM)",
+    base: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    labels: null,
+    attrib: "© OpenStreetMap contributors"
   }
 };
 
@@ -34,7 +34,6 @@ export default function App() {
   const [source, setSource] = useState("ALL");
   const [filterType, setFilterType] = useState("ALL");
   const [hudVisible, setHudVisible] = useState(true);
-  const [selectedSpot, setSelectedSpot] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -71,57 +70,56 @@ export default function App() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-slate-950 text-slate-100 font-sans select-none">
+    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden", background: "#020617", fontFamily: "sans-serif", color: "#f8fafc" }}>
       {/* HUD Top Bar */}
-      <header className="absolute top-4 left-4 right-4 z-[1000] flex flex-wrap items-center justify-between gap-3 pointer-events-none">
-        <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-md border border-cyan-500/40 rounded-xl px-4 py-2 pointer-events-auto shadow-2xl">
+      <header style={{ position: "absolute", top: 16, left: 16, right: 16, zIndex: 1000, display: "flex", justifyContent: "space-between", alignItems: "center", pointerEvents: "none", flexWrap: "wrap", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(15, 23, 42, 0.85)", backdropFilter: "blur(8px)", border: "1px solid rgba(6, 182, 212, 0.4)", borderRadius: 12, padding: "8px 16px", pointerEvents: "auto", boxShadow: "0 10px 25px rgba(0,0,0,0.5)" }}>
           <button
             onClick={() => setHudVisible(!hudVisible)}
-            className="text-xs uppercase tracking-wider font-semibold px-2.5 py-1 bg-cyan-950/70 border border-cyan-500/50 hover:bg-cyan-900 text-cyan-300 rounded"
+            style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, padding: "4px 10px", background: "rgba(8, 51, 68, 0.7)", border: "1px solid rgba(6, 182, 212, 0.5)", color: "#67e8f9", borderRadius: 6, cursor: "pointer" }}
           >
-            {hudVisible ? "Hide HUD" : "Show HUD"}
+            {hudVisible ? "HIDE HUD" : "SHOW HUD"}
           </button>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
-            <h1 className="text-sm font-bold tracking-wider text-slate-100">
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22d3ee", display: "inline-block" }} />
+            <h1 style={{ fontSize: 14, fontWeight: 800, letterSpacing: 1.5, margin: 0, color: "#f8fafc" }}>
               INDUSTRIAL FIRE & ANOMALY GIS
             </h1>
-            <span className="text-[10px] bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-1.5 py-0.5 rounded font-mono">
+            <span style={{ fontSize: 10, background: "rgba(6, 182, 212, 0.2)", color: "#22d3ee", border: "1px solid rgba(6, 182, 212, 0.4)", padding: "2px 6px", borderRadius: 4, fontFamily: "monospace" }}>
               LIVE
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-xl px-4 py-2 pointer-events-auto shadow-2xl text-xs font-mono">
+        <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(15, 23, 42, 0.85)", backdropFilter: "blur(8px)", border: "1px solid #1e293b", borderRadius: 12, padding: "8px 16px", pointerEvents: "auto", boxShadow: "0 10px 25px rgba(0,0,0,0.5)", fontSize: 12, fontFamily: "monospace" }}>
           <div>
-            <span className="text-slate-400">STRATEGIC SITES:</span>{" "}
-            <span className="text-cyan-400 font-bold">{strategicCount}</span>
+            <span style={{ color: "#94a3b8" }}>STRATEGIC SITES:</span>{" "}
+            <span style={{ color: "#22d3ee", fontWeight: 700 }}>{strategicCount}</span>
           </div>
-          <span className="text-slate-700">|</span>
+          <span style={{ color: "#334155" }}>|</span>
           <div>
-            <span className="text-slate-400">ACTIVE DETECTIONS:</span>{" "}
-            <span className="text-rose-400 font-bold">{filteredData.length}</span>
+            <span style={{ color: "#94a3b8" }}>ACTIVE DETECTIONS:</span>{" "}
+            <span style={{ color: "#fb7185", fontWeight: 700 }}>{filteredData.length}</span>
           </div>
-          <span className="text-slate-700">|</span>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span className="text-emerald-400 font-medium">CONNECTED</span>
+          <span style={{ color: "#334155" }}>|</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#34d399", display: "inline-block" }} />
+            <span style={{ color: "#34d399", fontWeight: 600 }}>CONNECTED</span>
           </div>
         </div>
       </header>
 
       {/* Control Panel */}
       {hudVisible && (
-        <aside className="absolute top-20 left-4 z-[1000] w-80 bg-slate-900/85 backdrop-blur-md border border-slate-800/80 rounded-2xl p-4 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
-          {/* Base Map Theme */}
+        <aside style={{ position: "absolute", top: 80, left: 16, zIndex: 1000, width: 300, background: "rgba(15, 23, 42, 0.9)", backdropFilter: "blur(12px)", border: "1px solid rgba(30, 41, 59, 0.8)", borderRadius: 16, padding: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.6)", display: "flex", flexDirection: "column", gap: 14, maxHeight: "80vh", overflowY: "auto" }}>
           <div>
-            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
-              GIS Base Tile Theme
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", letterSpacing: 0.5, display: "block", marginBottom: 6 }}>
+              GIS BASE TILE THEME
             </label>
             <select
               value={activeTheme}
               onChange={(e) => setActiveTheme(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 outline-none focus:border-cyan-500"
+              style={{ width: "100%", background: "#020617", border: "1px solid #334155", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#e2e8f0", outline: "none", cursor: "pointer" }}
             >
               {Object.entries(MAP_THEMES).map(([key, t]) => (
                 <option key={key} value={key}>
@@ -131,32 +129,26 @@ export default function App() {
             </select>
           </div>
 
-          {/* Optics Pulse */}
           <div>
-            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
-              Holographic Optics
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", letterSpacing: 0.5, display: "block", marginBottom: 6 }}>
+              HOLOGRAPHIC OPTICS
             </label>
             <button
               onClick={() => setPulse(!pulse)}
-              className={`w-full py-2 px-3 text-xs font-semibold rounded-lg border transition-all ${
-                pulse
-                  ? "bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.25)]"
-                  : "bg-slate-950 border-slate-700 text-slate-400"
-              }`}
+              style={{ width: "100%", padding: "8px 12px", fontSize: 12, fontWeight: 700, borderRadius: 8, border: pulse ? "1px solid #22d3ee" : "1px solid #334155", background: pulse ? "rgba(6, 182, 212, 0.2)" : "#020617", color: pulse ? "#67e8f9" : "#94a3b8", cursor: "pointer", transition: "all 0.2s" }}
             >
               Hologram Pulse: {pulse ? "ON" : "OFF"}
             </button>
           </div>
 
-          {/* Satellite Source */}
           <div>
-            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
-              Satellite Source
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", letterSpacing: 0.5, display: "block", marginBottom: 6 }}>
+              SATELLITE SOURCE
             </label>
             <select
               value={source}
               onChange={(e) => setSource(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 outline-none focus:border-cyan-500"
+              style={{ width: "100%", background: "#020617", border: "1px solid #334155", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#e2e8f0", outline: "none", cursor: "pointer" }}
             >
               <option value="ALL">All Satellites (Merged)</option>
               <option value="VIIRS_NOAA20_NRT">VIIRS NOAA-20 (High-Res 375m)</option>
@@ -165,21 +157,16 @@ export default function App() {
             </select>
           </div>
 
-          {/* Time Window */}
           <div>
-            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
-              Orbit Time Window
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", letterSpacing: 0.5, display: "block", marginBottom: 6 }}>
+              ORBIT TIME WINDOW
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
               {[1, 3, 5].map((d) => (
                 <button
                   key={d}
                   onClick={() => setDays(d)}
-                  className={`py-1.5 text-xs font-semibold rounded-lg border ${
-                    days === d
-                      ? "bg-amber-500/20 border-amber-500 text-amber-300"
-                      : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
-                  }`}
+                  style={{ padding: "6px 0", fontSize: 12, fontWeight: 700, borderRadius: 8, border: days === d ? "1px solid #f59e0b" : "1px solid #1e293b", background: days === d ? "rgba(245, 158, 11, 0.25)" : "#020617", color: days === d ? "#fcd34d" : "#94a3b8", cursor: "pointer" }}
                 >
                   {d === 1 ? "24 Hours" : `${d} Days`}
                 </button>
@@ -187,12 +174,11 @@ export default function App() {
             </div>
           </div>
 
-          {/* Filters */}
           <div>
-            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
-              Anomaly Type Filters
+            <label style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", letterSpacing: 0.5, display: "block", marginBottom: 6 }}>
+              ANOMALY TYPE FILTERS
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
               {[
                 { id: "ALL", label: "ALL" },
                 { id: "CRITICAL", label: "CRITICAL" },
@@ -202,11 +188,7 @@ export default function App() {
                 <button
                   key={f.id}
                   onClick={() => setFilterType(f.id)}
-                  className={`py-1.5 px-2 text-xs font-bold rounded-lg border ${
-                    filterType === f.id
-                      ? "bg-blue-600 border-blue-400 text-white"
-                      : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
-                  }`}
+                  style={{ padding: "8px 0", fontSize: 11, fontWeight: 800, borderRadius: 8, border: filterType === f.id ? "1px solid #3b82f6" : "1px solid #1e293b", background: filterType === f.id ? "#2563eb" : "#020617", color: filterType === f.id ? "#ffffff" : "#94a3b8", cursor: "pointer" }}
                 >
                   {f.label}
                 </button>
@@ -214,29 +196,28 @@ export default function App() {
             </div>
           </div>
 
-          {/* Legend */}
-          <div className="pt-2 border-t border-slate-800 text-[11px] space-y-1.5 text-slate-400">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+          <div style={{ paddingTop: 10, borderTop: "1px solid #1e293b", fontSize: 11, display: "flex", flexDirection: "column", gap: 6, color: "#94a3b8" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#ef4444" }} />
               <span>Extreme Heat / Threat Spike</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
-              <span>Industrial Flaring / Asset Buffer</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#06b6d4" }} />
+              <span>Industrial Flaring / Asset</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#f97316" }} />
               <span>High Intensity Anomaly</span>
             </div>
           </div>
         </aside>
       )}
 
-      {/* Main Map */}
+      {/* Main Full-Screen Map */}
       <MapContainer
         center={[22.5, 78.9]}
         zoom={5}
-        className="w-full h-full z-0"
+        style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0, zIndex: 1 }}
         zoomControl={false}
       >
         <TileLayer
@@ -259,20 +240,17 @@ export default function App() {
             <CircleMarker
               key={`${item.latitude}-${item.longitude}-${idx}`}
               center={[item.latitude, item.longitude]}
-              radius={item.is_anomaly ? 8 : 5}
+              radius={item.is_anomaly ? 7 : 4}
               pathOptions={{
                 color: color,
                 fillColor: color,
-                fillOpacity: pulse ? 0.8 : 0.6,
+                fillOpacity: pulse ? 0.85 : 0.6,
                 weight: item.is_anomaly ? 2 : 1
               }}
-              eventHandlers={{
-                click: () => setSelectedSpot(item)
-              }}
             >
-              <Popup className="custom-popup">
-                <div className="p-1 text-slate-900 font-sans text-xs space-y-1">
-                  <div className="font-bold text-slate-950 border-b pb-1">
+              <Popup>
+                <div style={{ color: "#0f172a", fontSize: 12, lineHeight: 1.4 }}>
+                  <div style={{ fontWeight: 800, borderBottom: "1px solid #cbd5e1", paddingBottom: 4, marginBottom: 4 }}>
                     {item.classification}
                   </div>
                   <div><strong>Nearest Asset:</strong> {item.nearest_facility}</div>
@@ -280,7 +258,7 @@ export default function App() {
                   <div><strong>FRP (Intensity):</strong> {item.frp} MW</div>
                   <div><strong>Brightness:</strong> {item.brightness} K</div>
                   <div><strong>Sensor:</strong> {item.satellite}</div>
-                  <div><strong>Timestamp:</strong> {item.acq_date} {item.acq_time}</div>
+                  <div><strong>Acquired:</strong> {item.acq_date} {item.acq_time}</div>
                 </div>
               </Popup>
             </CircleMarker>
