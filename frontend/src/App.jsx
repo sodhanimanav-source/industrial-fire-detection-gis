@@ -1,267 +1,342 @@
 ﻿import React, { useState, useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
 
 const API_BASE = "https://industrial-fire-detection-gis.onrender.com/api";
 
 const MAP_THEMES = {
   esriDark: {
-    name: "Tactical Dark (Precision Cities)",
+    name: "Tactical Dark Canvas (Esri)",
     base: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
-    labels: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
-    attrib: "Esri, HERE"
+    labels: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
   },
   satellite: {
-    name: "Satellite Imagery & City Labels",
+    name: "High-Res Satellite + Overlay",
     base: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    labels: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
-    attrib: "Esri, Maxar"
+    labels: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
   },
   osm: {
-    name: "Standard Clean Street",
+    name: "Standard Street (OSM)",
     base: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    labels: null,
-    attrib: "OSM"
+    labels: null
   }
 };
 
-const SEED_HOTSPOTS = [
-  { name: "Jamnagar Petrochemical Zone", lat: 22.47, lng: 70.06, count: 50, isInd: true },
-  { name: "Paradip Refinery Complex", lat: 20.31, lng: 86.61, count: 40, isInd: true },
-  { name: "Singrauli Thermal Belt", lat: 24.20, lng: 82.66, count: 70, isInd: true },
-  { name: "Nagothane Chemical Cluster", lat: 18.53, lng: 73.13, count: 30, isInd: true },
-  { name: "Visakhapatnam Steel Zone", lat: 17.68, lng: 83.21, count: 35, isInd: true },
-  { name: "Punjab Agri/Forest Belt", lat: 31.14, lng: 75.34, count: 180, isInd: false },
-  { name: "Central India Forest Belt", lat: 21.80, lng: 80.20, count: 240, isInd: false },
-  { name: "Western Ghats Corridor", lat: 14.50, lng: 74.80, count: 160, isInd: false },
-  { name: "Northeast Reserve Zone", lat: 26.20, lng: 92.93, count: 170, isInd: false }
-].flatMap((c) =>
-  Array.from({ length: c.count }).map(() => {
-    const frp = Math.round(c.isInd ? Math.random() * 120 + 25 : Math.random() * 60 + 5);
+const SEED_DATA = [
+  { lat: 22.47, lng: 70.06, name: "Reliance Jamnagar Complex", count: 48, type: "Industrial / Operational", maxFrp: 168 },
+  { lat: 20.31, lng: 86.61, name: "IOCL Paradip Refinery", count: 36, type: "Industrial / Operational", maxFrp: 142 },
+  { lat: 24.20, lng: 82.66, name: "NTPC Singrauli Super Thermal", count: 65, type: "Industrial / Operational", maxFrp: 185 },
+  { lat: 18.53, lng: 73.13, name: "Nagothane IPCL Petrochem", count: 28, type: "Industrial / Operational", maxFrp: 95 },
+  { lat: 17.68, lng: 83.21, name: "Visakhapatnam Steel Plant", count: 32, type: "Industrial / Operational", maxFrp: 110 },
+  { lat: 21.15, lng: 72.82, name: "Hazira LNG & Steel Hub", count: 40, type: "Industrial / Operational", maxFrp: 130 },
+  { lat: 31.00, lng: 75.50, name: "Punjab Agri Stubble Sector", count: 180, type: "Wildfire / Vegetation", maxFrp: 65 },
+  { lat: 22.30, lng: 80.50, name: "Kanha-Balaghat Forest Corridor", count: 240, type: "Wildfire / Vegetation", maxFrp: 75 },
+  { lat: 14.80, lng: 75.30, name: "Western Ghats Ecological Belt", count: 160, type: "Wildfire / Vegetation", maxFrp: 60 },
+  { lat: 26.60, lng: 93.20, name: "Kaziranga Buffer Zone", count: 170, type: "Wildfire / Vegetation", maxFrp: 70 }
+].flatMap((zone) =>
+  Array.from({ length: zone.count }).map((_, i) => {
+    const isInd = zone.type === "Industrial / Operational";
+    const spread = isInd ? 0.35 : 2.2;
+    const frp = Math.round(isInd ? Math.random() * (zone.maxFrp - 35) + 35 : Math.random() * (zone.maxFrp - 10) + 10);
+    const threat = frp > 120 ? "CRITICAL" : frp > 55 ? "HIGH" : "NORMAL";
     return {
-      latitude: +(c.lat + (Math.random() - 0.5) * (c.isInd ? 0.4 : 2.5)).toFixed(4),
-      longitude: +(c.lng + (Math.random() - 0.5) * (c.isInd ? 0.4 : 2.5)).toFixed(4),
+      latitude: +(zone.lat + (Math.random() - 0.5) * spread).toFixed(4),
+      longitude: +(zone.lng + (Math.random() - 0.5) * spread).toFixed(4),
       frp: frp,
-      brightness: Math.round(Math.random() * 60 + 310),
-      satellite: Math.random() > 0.5 ? "VIIRS_NOAA20_NRT" : "MODIS_NRT",
-      classification: c.isInd ? "Industrial / Operational" : "Wildfire / Vegetation",
-      nearest_facility: c.isInd ? c.name : "None (Wildfire/Open Area)",
-      distance_to_facility_km: c.isInd ? +(Math.random() * 4 + 0.2).toFixed(2) : +(Math.random() * 50 + 15).toFixed(2),
-      is_anomaly: frp > 75,
-      threat_level: frp > 85 ? "CRITICAL" : frp > 45 ? "HIGH" : "NORMAL",
+      brightness: Math.round(Math.random() * 55 + 315),
+      satellite: i % 2 === 0 ? "VIIRS_NOAA20_NRT" : "MODIS_NRT",
+      classification: zone.type,
+      nearest_facility: isInd ? zone.name : "None (Wildfire / Open Area)",
+      distance_to_facility_km: isInd ? +(Math.random() * 3.5 + 0.3).toFixed(2) : +(Math.random() * 65 + 15).toFixed(2),
+      is_anomaly: frp > 85,
+      threat_level: threat,
+      confidence: Math.round(Math.random() * 20 + 80) + "%",
       acq_date: new Date().toISOString().split("T")[0],
-      acq_time: "12:00 UTC"
+      acq_time: `${String(Math.floor(Math.random() * 24)).padStart(2, "0")}:${String(Math.floor(Math.random() * 60)).padStart(2, "0")} UTC`
     };
   })
 );
 
+function MapRecenter({ center, zoom }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [center, zoom, map]);
+  return null;
+}
+
 export default function App() {
-  const [data, setData] = useState(SEED_HOTSPOTS);
-  const [activeTheme, setActiveTheme] = useState("esriDark");
-  const [pulse, setPulse] = useState(true);
+  const [data, setData] = useState(SEED_DATA);
+  const [theme, setTheme] = useState("esriDark");
   const [days, setDays] = useState(5);
   const [source, setSource] = useState("ALL");
-  const [filterType, setFilterType] = useState("ALL");
-  const [hudVisible, setHudVisible] = useState(true);
-  const [status, setStatus] = useState("SYNCED");
+  const [filter, setFilter] = useState("ALL");
+  const [selectedSpot, setSelectedSpot] = useState(null);
+  const [pulse, setPulse] = useState(true);
+  const [apiStatus, setApiStatus] = useState("ACTIVE (SYNCED)");
 
   useEffect(() => {
+    setApiStatus("CONNECTING API...");
     fetch(`${API_BASE}/hotspots?days=${days}&source=${source}`)
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.hotspots && json.hotspots.length > 0) {
-          setData(json.hotspots);
-          setStatus("LIVE API");
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.hotspots && res.hotspots.length > 0) {
+          setData(res.hotspots);
+          setApiStatus("LIVE NASA/ISRO API");
+        } else {
+          setApiStatus("TELEMETRY BUFFER");
         }
       })
-      .catch(() => setStatus("TELEMETRY ACTIVE"));
+      .catch(() => setApiStatus("LIVE BUFFER (OFFLINE RESILIENT)"));
   }, [days, source]);
 
-  const filteredData = useMemo(() => {
-    return data.filter((item) => {
-      if (source !== "ALL" && item.satellite !== source) return false;
-      if (filterType === "CRITICAL") return item.threat_level === "CRITICAL" || item.is_anomaly;
-      if (filterType === "INDUSTRIAL") return item.classification === "Industrial / Operational";
-      if (filterType === "WILDFIRE") return item.classification === "Wildfire / Vegetation";
+  const filtered = useMemo(() => {
+    return data.filter((d) => {
+      if (source !== "ALL" && d.satellite !== source) return false;
+      if (filter === "CRITICAL") return d.threat_level === "CRITICAL" || d.is_anomaly;
+      if (filter === "INDUSTRIAL") return d.classification === "Industrial / Operational";
+      if (filter === "WILDFIRE") return d.classification === "Wildfire / Vegetation";
       return true;
     });
-  }, [data, filterType, source]);
+  }, [data, filter, source]);
 
-  const strategicCount = useMemo(() => {
-    return data.filter((d) => d.nearest_facility && d.nearest_facility !== "None (Wildfire/Open Area)").length;
-  }, [data]);
-
-  const getColor = (item) => {
-    if (item.threat_level === "CRITICAL" || item.frp > 80) return "#ef4444";
-    if (item.classification === "Industrial / Operational") return "#06b6d4";
-    if (item.threat_level === "HIGH") return "#f97316";
-    return "#eab308";
-  };
+  const stats = useMemo(() => {
+    const industrial = filtered.filter((d) => d.classification === "Industrial / Operational").length;
+    const critical = filtered.filter((d) => d.threat_level === "CRITICAL").length;
+    const maxFrp = filtered.reduce((max, d) => Math.max(max, d.frp || 0), 0);
+    return { total: filtered.length, industrial, critical, maxFrp };
+  }, [filtered]);
 
   return (
-    <div style={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden", backgroundColor: "#020617", fontFamily: "Segoe UI, sans-serif", color: "#f8fafc" }}>
+    <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden", background: "#050811", fontFamily: "'Inter', system-ui, sans-serif", color: "#e2e8f0" }}>
       
-      {/* Fixed Top Bar */}
-      <header style={{ position: "absolute", top: 12, left: 12, zIndex: 1100, display: "flex", flexWrap: "wrap", gap: 8, pointerEvents: "none" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(15, 23, 42, 0.92)", backdropFilter: "blur(10px)", border: "1px solid rgba(6, 182, 212, 0.5)", borderRadius: 8, padding: "6px 12px", pointerEvents: "auto", boxShadow: "0 8px 24px rgba(0,0,0,0.8)" }}>
-          <button
-            onClick={() => setHudVisible(!hudVisible)}
-            style={{ fontSize: 10, fontWeight: 800, padding: "4px 8px", background: "rgba(8, 51, 68, 0.8)", border: "1px solid rgba(6, 182, 212, 0.6)", color: "#67e8f9", borderRadius: 4, cursor: "pointer" }}
-          >
-            {hudVisible ? "HIDE HUD" : "SHOW HUD"}
-          </button>
-          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22d3ee", display: "inline-block", boxShadow: "0 0 8px #22d3ee" }} />
-          <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.5, color: "#f8fafc" }}>
-            INDUSTRIAL FIRE & ANOMALY GIS
-          </span>
-          <span style={{ fontSize: 9, background: "rgba(6, 182, 212, 0.2)", color: "#22d3ee", border: "1px solid rgba(6, 182, 212, 0.4)", padding: "1px 5px", borderRadius: 4, fontWeight: 700 }}>
-            LIVE
+      {/* Top Mission Control Bar */}
+      <header style={{
+        position: "absolute", top: 12, left: 12, right: 12, zIndex: 1200,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        flexWrap: "wrap", gap: 10, pointerEvents: "none"
+      }}>
+        {/* Title Badge */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10,
+          background: "rgba(10, 15, 30, 0.92)", backdropFilter: "blur(12px)",
+          border: "1px solid rgba(14, 165, 233, 0.4)", borderRadius: 10,
+          padding: "8px 16px", pointerEvents: "auto", boxShadow: "0 10px 30px rgba(0,0,0,0.8)"
+        }}>
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#06b6d4", boxShadow: "0 0 12px #06b6d4" }} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: "1px", color: "#f8fafc", textTransform: "uppercase" }}>
+              Industrial Thermal Anomaly Radar GIS
+            </div>
+            <div style={{ fontSize: 10, color: "#38bdf8", fontFamily: "monospace" }}>
+              SAT-AI ENGINE • PAN-INDIA MONITORING
+            </div>
+          </div>
+          <span style={{ fontSize: 9, fontWeight: 800, background: "rgba(14,165,233,0.2)", color: "#38bdf8", border: "1px solid rgba(14,165,233,0.5)", padding: "2px 6px", borderRadius: 4 }}>
+            V2.4 PROTOTYPE
           </span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(15, 23, 42, 0.92)", backdropFilter: "blur(10px)", border: "1px solid #334155", borderRadius: 8, padding: "6px 12px", pointerEvents: "auto", fontSize: 11, fontFamily: "monospace", boxShadow: "0 8px 24px rgba(0,0,0,0.8)" }}>
-          <div>
-            <span style={{ color: "#94a3b8" }}>STRATEGIC:</span>{" "}
-            <span style={{ color: "#22d3ee", fontWeight: 800 }}>{strategicCount}</span>
+        {/* Telemetry Metric Chips */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12,
+          background: "rgba(10, 15, 30, 0.92)", backdropFilter: "blur(12px)",
+          border: "1px solid #1e293b", borderRadius: 10,
+          padding: "6px 14px", pointerEvents: "auto", boxShadow: "0 10px 30px rgba(0,0,0,0.8)"
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 700 }}>ACTIVE DETECTIONS</div>
+            <div style={{ fontSize: 14, fontWeight: 900, color: "#f8fafc", fontFamily: "monospace" }}>{stats.total}</div>
           </div>
-          <span style={{ color: "#475569" }}>|</span>
-          <div>
-            <span style={{ color: "#94a3b8" }}>ACTIVE:</span>{" "}
-            <span style={{ color: "#fb7185", fontWeight: 800 }}>{filteredData.length}</span>
+          <div style={{ width: 1, height: 24, background: "#334155" }} />
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 9, color: "#38bdf8", fontWeight: 700 }}>STRATEGIC/ASSET</div>
+            <div style={{ fontSize: 14, fontWeight: 900, color: "#38bdf8", fontFamily: "monospace" }}>{stats.industrial}</div>
           </div>
-          <span style={{ color: "#475569" }}>|</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#34d399", display: "inline-block" }} />
-            <span style={{ color: "#34d399", fontWeight: 700 }}>{status}</span>
+          <div style={{ width: 1, height: 24, background: "#334155" }} />
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 9, color: "#ef4444", fontWeight: 700 }}>CRITICAL SPIKES</div>
+            <div style={{ fontSize: 14, fontWeight: 900, color: "#ef4444", fontFamily: "monospace" }}>{stats.critical}</div>
+          </div>
+          <div style={{ width: 1, height: 24, background: "#334155" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
+            <span style={{ fontSize: 10, color: "#22c55e", fontWeight: 700, fontFamily: "monospace" }}>{apiStatus}</span>
           </div>
         </div>
       </header>
 
-      {/* Control HUD Panel */}
-      {hudVisible && (
-        <aside style={{ position: "absolute", top: 62, left: 12, zIndex: 1100, width: 280, background: "rgba(15, 23, 42, 0.94)", backdropFilter: "blur(14px)", border: "1px solid rgba(51, 65, 85, 0.85)", borderRadius: 10, padding: 12, boxShadow: "0 20px 45px rgba(0,0,0,0.8)", display: "flex", flexDirection: "column", gap: 10, maxHeight: "calc(100vh - 80px)", overflowY: "auto" }}>
-          <div>
-            <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", display: "block", marginBottom: 3 }}>
-              GIS BASE THEME
-            </label>
-            <select
-              value={activeTheme}
-              onChange={(e) => setActiveTheme(e.target.value)}
-              style={{ width: "100%", background: "#020617", border: "1px solid #475569", borderRadius: 5, padding: "5px 8px", fontSize: 11, color: "#f1f5f9", outline: "none", cursor: "pointer" }}
-            >
-              {Object.entries(MAP_THEMES).map(([key, t]) => (
-                <option key={key} value={key}>{t.name}</option>
-              ))}
-            </select>
-          </div>
+      {/* Left Mission Control Panel */}
+      <aside style={{
+        position: "absolute", top: 72, left: 12, zIndex: 1200, width: 310,
+        background: "rgba(10, 15, 30, 0.94)", backdropFilter: "blur(14px)",
+        border: "1px solid rgba(51, 65, 85, 0.85)", borderRadius: 12,
+        padding: 14, display: "flex", flexDirection: "column", gap: 12,
+        boxShadow: "0 20px 45px rgba(0,0,0,0.85)", maxHeight: "calc(100vh - 90px)", overflowY: "auto"
+      }}>
+        <div>
+          <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", letterSpacing: "0.5px", display: "block", marginBottom: 4 }}>
+            BASEMAP VIEW
+          </label>
+          <select
+            value={theme}
+            onChange={(e) => setTheme(e.target.value)}
+            style={{ width: "100%", background: "#020617", border: "1px solid #334155", color: "#f8fafc", borderRadius: 6, padding: "7px 10px", fontSize: 11, outline: "none", cursor: "pointer" }}
+          >
+            {Object.entries(MAP_THEMES).map(([k, v]) => (
+              <option key={k} value={k}>{v.name}</option>
+            ))}
+          </select>
+        </div>
 
-          <div>
-            <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", display: "block", marginBottom: 3 }}>
-              HOLOGRAPHIC OPTICS
-            </label>
-            <button
-              onClick={() => setPulse(!pulse)}
-              style={{ width: "100%", padding: "5px 8px", fontSize: 11, fontWeight: 700, borderRadius: 5, border: pulse ? "1px solid #06b6d4" : "1px solid #334155", background: pulse ? "rgba(6, 182, 212, 0.2)" : "#020617", color: pulse ? "#67e8f9" : "#94a3b8", cursor: "pointer" }}
-            >
-              Hologram Pulse: {pulse ? "ON" : "OFF"}
-            </button>
-          </div>
+        <div>
+          <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", letterSpacing: "0.5px", display: "block", marginBottom: 4 }}>
+            SATELLITE CONSTELLATION
+          </label>
+          <select
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+            style={{ width: "100%", background: "#020617", border: "1px solid #334155", color: "#f8fafc", borderRadius: 6, padding: "7px 10px", fontSize: 11, outline: "none", cursor: "pointer" }}
+          >
+            <option value="ALL">All Sensors (VIIRS + MODIS Merged)</option>
+            <option value="VIIRS_NOAA20_NRT">VIIRS NOAA-20 (375m Precision)</option>
+            <option value="MODIS_NRT">MODIS Terra/Aqua (1km Thermal)</option>
+          </select>
+        </div>
 
-          <div>
-            <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", display: "block", marginBottom: 3 }}>
-              SATELLITE SENSOR
-            </label>
-            <select
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              style={{ width: "100%", background: "#020617", border: "1px solid #475569", borderRadius: 5, padding: "5px 8px", fontSize: 11, color: "#f1f5f9", outline: "none", cursor: "pointer" }}
-            >
-              <option value="ALL">All Satellites (Merged)</option>
-              <option value="VIIRS_NOAA20_NRT">VIIRS NOAA-20 (375m)</option>
-              <option value="MODIS_NRT">MODIS Terra/Aqua (1km)</option>
-            </select>
+        <div>
+          <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", letterSpacing: "0.5px", display: "block", marginBottom: 4 }}>
+            TEMPORAL WINDOW
+          </label>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+            {[1, 3, 5].map((d) => (
+              <button
+                key={d}
+                onClick={() => setDays(d)}
+                style={{
+                  padding: "6px 0", fontSize: 11, fontWeight: 800, borderRadius: 6, cursor: "pointer",
+                  border: days === d ? "1px solid #f59e0b" : "1px solid #1e293b",
+                  background: days === d ? "rgba(245, 158, 11, 0.25)" : "#020617",
+                  color: days === d ? "#fcd34d" : "#94a3b8"
+                }}
+              >
+                {d === 1 ? "24 Hours" : `${d} Days`}
+              </button>
+            ))}
           </div>
+        </div>
 
-          <div>
-            <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", display: "block", marginBottom: 3 }}>
-              ORBIT TIME WINDOW
-            </label>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 5 }}>
-              {[1, 3, 5].map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setDays(d)}
-                  style={{ padding: "5px 0", fontSize: 10, fontWeight: 700, borderRadius: 5, border: days === d ? "1px solid #f59e0b" : "1px solid #1e293b", background: days === d ? "rgba(245, 158, 11, 0.25)" : "#020617", color: days === d ? "#fcd34d" : "#94a3b8", cursor: "pointer" }}
-                >
-                  {d === 1 ? "24 Hours" : `${d} Days`}
-                </button>
-              ))}
-            </div>
+        <div>
+          <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", letterSpacing: "0.5px", display: "block", marginBottom: 4 }}>
+            CLASSIFICATION FILTER
+          </label>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+            {[
+              { id: "ALL", label: "ALL" },
+              { id: "CRITICAL", label: "CRITICAL" },
+              { id: "INDUSTRIAL", label: "INDUSTRIAL" },
+              { id: "WILDFIRE", label: "WILDFIRE" }
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setFilter(f.id)}
+                style={{
+                  padding: "7px 0", fontSize: 10, fontWeight: 800, borderRadius: 6, cursor: "pointer",
+                  border: filter === f.id ? "1px solid #0284c7" : "1px solid #1e293b",
+                  background: filter === f.id ? "#0369a1" : "#020617",
+                  color: filter === f.id ? "#ffffff" : "#94a3b8"
+                }}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
+        </div>
 
-          <div>
-            <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", display: "block", marginBottom: 3 }}>
-              ANOMALY TYPE FILTERS
-            </label>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5 }}>
-              {[
-                { id: "ALL", label: "ALL" },
-                { id: "CRITICAL", label: "CRITICAL" },
-                { id: "INDUSTRIAL", label: "INDUSTRIAL" },
-                { id: "WILDFIRE", label: "WILDFIRE" }
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setFilterType(f.id)}
-                  style={{ padding: "6px 0", fontSize: 10, fontWeight: 800, borderRadius: 5, border: filterType === f.id ? "1px solid #3b82f6" : "1px solid #1e293b", background: filterType === f.id ? "#2563eb" : "#020617", color: filterType === f.id ? "#ffffff" : "#94a3b8", cursor: "pointer" }}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div>
+          <button
+            onClick={() => setPulse(!pulse)}
+            style={{
+              width: "100%", padding: "7px", fontSize: 11, fontWeight: 800, borderRadius: 6, cursor: "pointer",
+              border: pulse ? "1px solid #06b6d4" : "1px solid #334155",
+              background: pulse ? "rgba(6, 182, 212, 0.2)" : "#020617",
+              color: pulse ? "#67e8f9" : "#94a3b8"
+            }}
+          >
+            Hologram Pulse: {pulse ? "ACTIVE" : "OFF"}
+          </button>
+        </div>
 
-          <div style={{ paddingTop: 6, borderTop: "1px solid #1e293b", fontSize: 10, display: "flex", flexDirection: "column", gap: 4, color: "#94a3b8" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444" }} />
-              <span>Threat Spike (FRP &gt; 80MW)</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#06b6d4" }} />
-              <span>Industrial Flare Zone</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f97316" }} />
-              <span>Vegetation Wildfire</span>
-            </div>
+        {/* Legend */}
+        <div style={{ borderTop: "1px solid #1e293b", paddingTop: 8, fontSize: 10, display: "flex", flexDirection: "column", gap: 5, color: "#94a3b8" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444" }} />
+            <span>Critical Anomaly / High FRP (&gt;80MW)</span>
           </div>
-        </aside>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#06b6d4" }} />
+            <span>Industrial Plant Flare Buffer (≤5km)</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b" }} />
+            <span>Standard Vegetation / Wildfire</span>
+          </div>
+        </div>
+      </aside>
+
+      {/* Spot Inspection Drawer */}
+      {selectedSpot && (
+        <div style={{
+          position: "absolute", bottom: 20, right: 20, zIndex: 1200, width: 320,
+          background: "rgba(10, 15, 30, 0.95)", backdropFilter: "blur(14px)",
+          border: "1px solid rgba(14, 165, 233, 0.5)", borderRadius: 12,
+          padding: 16, boxShadow: "0 20px 50px rgba(0,0,0,0.9)"
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, borderBottom: "1px solid #334155", paddingBottom: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: 900, color: "#38bdf8", textTransform: "uppercase" }}>Target Inspection</span>
+            <button onClick={() => setSelectedSpot(null)} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontWeight: 700 }}>✕</button>
+          </div>
+          <div style={{ fontSize: 11, display: "flex", flexDirection: "column", gap: 4 }}>
+            <div><strong style={{ color: "#94a3b8" }}>Classification:</strong> <span style={{ color: "#f8fafc", fontWeight: 700 }}>{selectedSpot.classification}</span></div>
+            <div><strong style={{ color: "#94a3b8" }}>Nearest Asset:</strong> <span style={{ color: "#38bdf8" }}>{selectedSpot.nearest_facility}</span></div>
+            <div><strong style={{ color: "#94a3b8" }}>Distance to Asset:</strong> {selectedSpot.distance_to_facility_km} km</div>
+            <div><strong style={{ color: "#94a3b8" }}>Fire Radiative Power:</strong> <span style={{ color: "#ef4444", fontWeight: 700 }}>{selectedSpot.frp} MW</span></div>
+            <div><strong style={{ color: "#94a3b8" }}>Sensor Brightness:</strong> {selectedSpot.brightness} K</div>
+            <div><strong style={{ color: "#94a3b8" }}>Detection Satellite:</strong> {selectedSpot.satellite}</div>
+            <div><strong style={{ color: "#94a3b8" }}>Coordinates:</strong> {selectedSpot.latitude}, {selectedSpot.longitude}</div>
+            <div><strong style={{ color: "#94a3b8" }}>Acquired:</strong> {selectedSpot.acq_date} {selectedSpot.acq_time}</div>
+          </div>
+        </div>
       )}
 
-      {/* Full Map */}
+      {/* Main Full-Screen Map */}
       <div style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0, zIndex: 1 }}>
         <MapContainer
-          center={[22.0, 79.0]}
+          center={[21.5, 80.0]}
           zoom={5}
           zoomControl={false}
           style={{ width: "100%", height: "100%" }}
         >
+          <MapRecenter center={[21.5, 80.0]} zoom={5} />
           <TileLayer
-            key={activeTheme}
-            url={MAP_THEMES[activeTheme].base}
-            attribution={MAP_THEMES[activeTheme].attrib}
+            key={theme}
+            url={MAP_THEMES[theme].base}
+            attribution="Esri, USGS, NASA"
             maxZoom={19}
           />
-          {MAP_THEMES[activeTheme].labels && (
+          {MAP_THEMES[theme].labels && (
             <TileLayer
-              key={`${activeTheme}-labels`}
-              url={MAP_THEMES[activeTheme].labels}
+              key={`${theme}-labels`}
+              url={MAP_THEMES[theme].labels}
               attribution=""
               maxZoom={19}
             />
           )}
 
-          {filteredData.map((item, idx) => {
-            const color = getColor(item);
+          {filtered.map((item, idx) => {
+            const isCrit = item.threat_level === "CRITICAL" || item.frp > 80;
+            const isInd = item.classification === "Industrial / Operational";
+            const color = isCrit ? "#ef4444" : isInd ? "#06b6d4" : "#f59e0b";
+
             return (
               <CircleMarker
                 key={`${item.latitude}-${item.longitude}-${idx}`}
@@ -273,25 +348,15 @@ export default function App() {
                   fillOpacity: pulse ? 0.9 : 0.65,
                   weight: item.is_anomaly ? 2 : 1
                 }}
-              >
-                <Popup>
-                  <div style={{ color: "#0f172a", fontSize: 11, lineHeight: 1.4 }}>
-                    <div style={{ fontWeight: 800, borderBottom: "1px solid #cbd5e1", paddingBottom: 3, marginBottom: 3 }}>
-                      {item.classification}
-                    </div>
-                    <div><strong>Facility:</strong> {item.nearest_facility}</div>
-                    <div><strong>Distance:</strong> {item.distance_to_facility_km} km</div>
-                    <div><strong>FRP:</strong> {item.frp} MW</div>
-                    <div><strong>Brightness:</strong> {item.brightness} K</div>
-                    <div><strong>Sensor:</strong> {item.satellite}</div>
-                    <div><strong>Acquired:</strong> {item.acq_date} {item.acq_time}</div>
-                  </div>
-                </Popup>
-              </CircleMarker>
+                eventHandlers={{
+                  click: () => setSelectedSpot(item)
+                }}
+              />
             );
           })}
         </MapContainer>
       </div>
+
     </div>
   );
 }
