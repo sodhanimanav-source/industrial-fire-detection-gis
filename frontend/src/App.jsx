@@ -10,12 +10,12 @@ const BACKEND_URL = "https://industrial-fire-detection-gis.onrender.com";
 const MAP_THEMES = {
   CYBER_DARK: {
     name: "Cyber Dark (CartoDB)",
-    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
     attribution: '&copy; CartoDB & OpenStreetMap'
   },
   VOYAGER: {
     name: "Midnight Tech Blue",
-    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     attribution: '&copy; CartoDB'
   },
   STREET_NEON: {
