@@ -430,3 +430,5 @@ export default function App() {
     </div>
   );
 }
+
+// Apply Advanced Spatial Debug: Red vs Orange intensity and context layers.
