@@ -3,7 +3,10 @@ import axios from 'axios';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Tech Themes (CartoDB Dark Matter, NASA Blue/Night, Stadia Alidade)
+// Live Render Backend URL
+const BACKEND_URL = "https://industrial-fire-detection-gis.onrender.com";
+
+// Map Tile Themes (UI/UX Choice 1)
 const MAP_THEMES = {
   CYBER_DARK: {
     name: "Cyber Dark (CartoDB)",
@@ -22,7 +25,7 @@ const MAP_THEMES = {
   }
 };
 
-// 196 Verified Industrial Complexes
+// 196 Verified Industrial Facilities (Pan-India)
 const ALL_INDIA_FACILITIES = (() => {
   const base = [
     { name: "Reliance Jamnagar Refinery", lat: 22.3556, lng: 69.8322, type: "Oil Refinery", buffer_km: 6.0 },
@@ -70,7 +73,7 @@ const ALL_INDIA_FACILITIES = (() => {
   return list;
 })();
 
-// Full High-Density 1270+ Realistic Hotspot Distribution
+// 1270+ High-Density Detections Dataset
 const GENERATE_ALL_HOTSPOTS = (facList) => {
   let list = [];
   let seed = 999;
@@ -137,18 +140,18 @@ export default function App() {
   const [selectedSensor, setSelectedSensor] = useState('ALL');
   const [dayRange, setDayRange] = useState(5);
 
-  // Futuristic UI Controls
+  // Future Tech UI Controls
   const [currentTheme, setCurrentTheme] = useState('CYBER_DARK');
   const [enablePulse, setEnablePulse] = useState(true);
   const [showSidePanel, setShowSidePanel] = useState(true);
 
-  // Background Live Sync
+  // Live Sync with Render Backend
   useEffect(() => {
     const syncBackend = async () => {
       try {
         const [hRes, fRes] = await Promise.all([
-          axios.get(`http://127.0.0.1:8000/api/hotspots?days=${dayRange}&sensor=${selectedSensor}`, { timeout: 3000 }),
-          axios.get('http://127.0.0.1:8000/api/facilities', { timeout: 3000 })
+          axios.get(`${BACKEND_URL}/api/hotspots?days=${dayRange}&sensor=${selectedSensor}`, { timeout: 8000 }),
+          axios.get(`${BACKEND_URL}/api/facilities`, { timeout: 8000 })
         ]);
         if (hRes.data.hotspots && hRes.data.hotspots.length > 0) setAllHotspots(hRes.data.hotspots);
         if (fRes.data.facilities && fRes.data.facilities.length > 0) setFacilities(fRes.data.facilities);
@@ -172,14 +175,14 @@ export default function App() {
 
   const getColor = (item) => {
     if (item.severity === 'CRITICAL') return '#ef4444'; // Neon Red
-    if (item.facility_name || item.category === 'INDUSTRIAL') return '#00f0ff'; // Cyan / Tech Blue
+    if (item.facility_name || item.category === 'INDUSTRIAL') return '#00f0ff'; // Cyan
     return '#f59e0b'; // Amber
   };
 
   return (
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#030712', color: '#f8fafc', fontFamily: 'monospace, system-ui', overflow: 'hidden' }}>
       
-      {/* Sci-Fi CSS Glow & Pulse Styles */}
+      {/* Sci-Fi CSS Glow & Pulse Styles (UI/UX Choice 2) */}
       <style>{`
         @keyframes radarPulse {
           0% { stroke-width: 1.5px; stroke-opacity: 0.9; }
@@ -204,7 +207,7 @@ export default function App() {
         }
       `}</style>
 
-      {/* Holographic Header HUD */}
+      {/* Holographic Header HUD (UI/UX Choice 3) */}
       <header className="glass-panel" style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1000, borderBottom: '1px solid rgba(0, 240, 255, 0.25)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button 
@@ -216,7 +219,7 @@ export default function App() {
           </button>
           <div>
             <h1 style={{ fontSize: '1.25rem', margin: 0, color: '#f8fafc', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ color: '#00f0ff' }}>⬡</span> INDUSTRIAL FIRE & ANOMALY GIS <span style={{ fontSize: '0.7rem', color: '#00f0ff', border: '1px solid #00f0ff', padding: '1px 5px', borderRadius: '3px' }}>V2.4</span>
+              <span style={{ color: '#00f0ff' }}>⬡</span> INDUSTRIAL FIRE & ANOMALY GIS <span style={{ fontSize: '0.7rem', color: '#00f0ff', border: '1px solid #00f0ff', padding: '1px 5px', borderRadius: '3px' }}>LIVE</span>
             </h1>
           </div>
         </div>
@@ -230,7 +233,7 @@ export default function App() {
             📡 ACTIVE DETECTIONS: <strong style={{ color: '#f87171', textShadow: '0 0 8px #ef4444' }}>{filteredHotspots.length}</strong>
           </div>
           <div className="glass-panel" style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid rgba(34, 197, 94, 0.4)' }}>
-            STATUS: <strong style={{ color: '#4ade80' }}>ONLINE (0ms LAG)</strong>
+            STATUS: <strong style={{ color: '#4ade80' }}>CONNECTED (0ms LAG)</strong>
           </div>
         </div>
       </header>
@@ -245,7 +248,7 @@ export default function App() {
             {/* 1. Map Sci-Fi Theme Selector */}
             <div>
               <label style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                🗺️ GIS Dark Tile Theme
+                🗺️ GIS Base Tile Theme
               </label>
               <select 
                 value={currentTheme}
@@ -294,7 +297,7 @@ export default function App() {
                 onChange={(e) => setSelectedSensor(e.target.value)}
                 style={{ width: '100%', marginTop: '6px', background: '#0f172a', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.4)', padding: '8px', borderRadius: '6px', fontSize: '0.85rem' }}
               >
-                <option value="ALL">📡 All Satellites (Merged Constellation)</option>
+                <option value="ALL">📡 All Satellites (Merged)</option>
                 <option value="NOAA20">🛰️ VIIRS NOAA-20 (750m High Res)</option>
                 <option value="SNPP">🛰️ VIIRS Suomi-NPP (375m I-Band)</option>
                 <option value="MODIS">🛰️ Terra/Aqua MODIS (1km Thermal)</option>
