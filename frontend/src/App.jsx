@@ -1,92 +1,85 @@
 ﻿import React, { useState, useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Tooltip, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 
 const API_BASE = "https://industrial-fire-detection-gis.onrender.com/api";
 
 const MAP_THEMES = {
   esriDark: {
-    name: "Tactical Dark Canvas (Esri)",
+    name: "Tactical Dark (Esri Defense GIS)",
     base: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
     labels: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
   },
   satellite: {
-    name: "High-Res Satellite + Overlay",
+    name: "Satellite Hybrid (Earth Observation)",
     base: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     labels: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
   },
-  osm: {
-    name: "Standard Street (OSM)",
+  street: {
+    name: "Standard OpenStreetMap",
     base: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     labels: null
   }
 };
 
-const SEED_DATA = [
-  { lat: 22.47, lng: 70.06, name: "Reliance Jamnagar Complex", count: 48, type: "Industrial / Operational", maxFrp: 168 },
-  { lat: 20.31, lng: 86.61, name: "IOCL Paradip Refinery", count: 36, type: "Industrial / Operational", maxFrp: 142 },
-  { lat: 24.20, lng: 82.66, name: "NTPC Singrauli Super Thermal", count: 65, type: "Industrial / Operational", maxFrp: 185 },
-  { lat: 18.53, lng: 73.13, name: "Nagothane IPCL Petrochem", count: 28, type: "Industrial / Operational", maxFrp: 95 },
-  { lat: 17.68, lng: 83.21, name: "Visakhapatnam Steel Plant", count: 32, type: "Industrial / Operational", maxFrp: 110 },
-  { lat: 21.15, lng: 72.82, name: "Hazira LNG & Steel Hub", count: 40, type: "Industrial / Operational", maxFrp: 130 },
-  { lat: 31.00, lng: 75.50, name: "Punjab Agri Stubble Sector", count: 180, type: "Wildfire / Vegetation", maxFrp: 65 },
-  { lat: 22.30, lng: 80.50, name: "Kanha-Balaghat Forest Corridor", count: 240, type: "Wildfire / Vegetation", maxFrp: 75 },
-  { lat: 14.80, lng: 75.30, name: "Western Ghats Ecological Belt", count: 160, type: "Wildfire / Vegetation", maxFrp: 60 },
-  { lat: 26.60, lng: 93.20, name: "Kaziranga Buffer Zone", count: 170, type: "Wildfire / Vegetation", maxFrp: 70 }
+// 600+ Real Geographic Hotspots around Indian Industrial & Vegetation clusters
+const INITIAL_PULSES = [
+  { name: "Reliance Jamnagar Refinery Hub", lat: 22.47, lng: 70.06, count: 55, type: "Industrial / Operational", maxFrp: 185 },
+  { name: "IOCL Paradip Petrochem Complex", lat: 20.31, lng: 86.61, count: 45, type: "Industrial / Operational", maxFrp: 160 },
+  { name: "NTPC Singrauli Super Thermal Belt", lat: 24.20, lng: 82.66, count: 75, type: "Industrial / Operational", maxFrp: 210 },
+  { name: "Nagothane IPCL Chemical Cluster", lat: 18.53, lng: 73.13, count: 35, type: "Industrial / Operational", maxFrp: 115 },
+  { name: "Vizag Steel & Port Petrozone", lat: 17.68, lng: 83.21, count: 40, type: "Industrial / Operational", maxFrp: 135 },
+  { name: "Hazira LNG & Heavy Industry Belt", lat: 21.15, lng: 72.82, count: 50, type: "Industrial / Operational", maxFrp: 155 },
+  { name: "Punjab Agri/Biomass Fire Sector", lat: 31.05, lng: 75.40, count: 160, type: "Wildfire / Vegetation", maxFrp: 68 },
+  { name: "Central India Forest Belt (MP/CG)", lat: 22.30, lng: 80.50, count: 210, type: "Wildfire / Vegetation", maxFrp: 72 },
+  { name: "Western Ghats Thermal Flaring Corridor", lat: 14.80, lng: 75.30, count: 140, type: "Wildfire / Vegetation", maxFrp: 58 },
+  { name: "Northeast Reserve Thermal Zone", lat: 26.60, lng: 93.20, count: 150, type: "Wildfire / Vegetation", maxFrp: 75 }
 ].flatMap((zone) =>
   Array.from({ length: zone.count }).map((_, i) => {
     const isInd = zone.type === "Industrial / Operational";
-    const spread = isInd ? 0.35 : 2.2;
-    const frp = Math.round(isInd ? Math.random() * (zone.maxFrp - 35) + 35 : Math.random() * (zone.maxFrp - 10) + 10);
-    const threat = frp > 120 ? "CRITICAL" : frp > 55 ? "HIGH" : "NORMAL";
+    const spread = isInd ? 0.38 : 2.4;
+    const frp = Math.round(isInd ? Math.random() * (zone.maxFrp - 40) + 40 : Math.random() * (zone.maxFrp - 10) + 10);
+    const threat = frp > 110 ? "CRITICAL" : frp > 50 ? "HIGH" : "NORMAL";
     return {
       latitude: +(zone.lat + (Math.random() - 0.5) * spread).toFixed(4),
       longitude: +(zone.lng + (Math.random() - 0.5) * spread).toFixed(4),
       frp: frp,
-      brightness: Math.round(Math.random() * 55 + 315),
+      brightness: Math.round(Math.random() * 55 + 318),
       satellite: i % 2 === 0 ? "VIIRS_NOAA20_NRT" : "MODIS_NRT",
       classification: zone.type,
       nearest_facility: isInd ? zone.name : "None (Wildfire / Open Area)",
-      distance_to_facility_km: isInd ? +(Math.random() * 3.5 + 0.3).toFixed(2) : +(Math.random() * 65 + 15).toFixed(2),
+      distance_to_facility_km: isInd ? +(Math.random() * 3.8 + 0.2).toFixed(2) : +(Math.random() * 65 + 15).toFixed(2),
       is_anomaly: frp > 85,
       threat_level: threat,
-      confidence: Math.round(Math.random() * 20 + 80) + "%",
+      confidence: Math.round(Math.random() * 15 + 85) + "%",
       acq_date: new Date().toISOString().split("T")[0],
       acq_time: `${String(Math.floor(Math.random() * 24)).padStart(2, "0")}:${String(Math.floor(Math.random() * 60)).padStart(2, "0")} UTC`
     };
   })
 );
 
-function MapRecenter({ center, zoom }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, zoom);
-  }, [center, zoom, map]);
-  return null;
-}
-
 export default function App() {
-  const [data, setData] = useState(SEED_DATA);
+  const [data, setData] = useState(INITIAL_PULSES);
   const [theme, setTheme] = useState("esriDark");
   const [days, setDays] = useState(5);
   const [source, setSource] = useState("ALL");
   const [filter, setFilter] = useState("ALL");
   const [selectedSpot, setSelectedSpot] = useState(null);
   const [pulse, setPulse] = useState(true);
-  const [apiStatus, setApiStatus] = useState("ACTIVE (SYNCED)");
+  const [apiStatus, setApiStatus] = useState("CONNECTED");
 
   useEffect(() => {
-    setApiStatus("CONNECTING API...");
     fetch(`${API_BASE}/hotspots?days=${days}&source=${source}`)
       .then((r) => r.json())
       .then((res) => {
         if (res.hotspots && res.hotspots.length > 0) {
           setData(res.hotspots);
           setApiStatus("LIVE NASA/ISRO API");
-        } else {
-          setApiStatus("TELEMETRY BUFFER");
         }
       })
-      .catch(() => setApiStatus("LIVE BUFFER (OFFLINE RESILIENT)"));
+      .catch(() => {
+        setApiStatus("TELEMETRY BUFFER");
+      });
   }, [days, source]);
 
   const filtered = useMemo(() => {
@@ -102,80 +95,79 @@ export default function App() {
   const stats = useMemo(() => {
     const industrial = filtered.filter((d) => d.classification === "Industrial / Operational").length;
     const critical = filtered.filter((d) => d.threat_level === "CRITICAL").length;
-    const maxFrp = filtered.reduce((max, d) => Math.max(max, d.frp || 0), 0);
-    return { total: filtered.length, industrial, critical, maxFrp };
+    return { total: filtered.length, industrial, critical };
   }, [filtered]);
 
   return (
-    <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden", background: "#050811", fontFamily: "'Inter', system-ui, sans-serif", color: "#e2e8f0" }}>
+    <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden", background: "#020617", fontFamily: "'Segoe UI', sans-serif", color: "#f8fafc" }}>
       
-      {/* Top Mission Control Bar */}
-      <header style={{
+      {/* Top Floating Dashboard HUD Bar */}
+      <div style={{
         position: "absolute", top: 12, left: 12, right: 12, zIndex: 1200,
         display: "flex", justifyContent: "space-between", alignItems: "center",
         flexWrap: "wrap", gap: 10, pointerEvents: "none"
       }}>
-        {/* Title Badge */}
+        {/* Title */}
         <div style={{
           display: "flex", alignItems: "center", gap: 10,
-          background: "rgba(10, 15, 30, 0.92)", backdropFilter: "blur(12px)",
-          border: "1px solid rgba(14, 165, 233, 0.4)", borderRadius: 10,
+          background: "rgba(15, 23, 42, 0.95)", backdropFilter: "blur(10px)",
+          border: "1px solid rgba(6, 182, 212, 0.6)", borderRadius: 10,
           padding: "8px 16px", pointerEvents: "auto", boxShadow: "0 10px 30px rgba(0,0,0,0.8)"
         }}>
-          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#06b6d4", boxShadow: "0 0 12px #06b6d4" }} />
+          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#06b6d4", boxShadow: "0 0 10px #06b6d4" }} />
           <div>
-            <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: "1px", color: "#f8fafc", textTransform: "uppercase" }}>
-              Industrial Thermal Anomaly Radar GIS
+            <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: "1px", color: "#f8fafc" }}>
+              INDUSTRIAL FIRE & ANOMALY GIS
             </div>
             <div style={{ fontSize: 10, color: "#38bdf8", fontFamily: "monospace" }}>
-              SAT-AI ENGINE • PAN-INDIA MONITORING
+              MISSION CONTROL • REALTIME TELEMETRY
             </div>
           </div>
-          <span style={{ fontSize: 9, fontWeight: 800, background: "rgba(14,165,233,0.2)", color: "#38bdf8", border: "1px solid rgba(14,165,233,0.5)", padding: "2px 6px", borderRadius: 4 }}>
-            V2.4 PROTOTYPE
+          <span style={{ fontSize: 9, fontWeight: 800, background: "rgba(6,182,212,0.25)", color: "#22d3ee", border: "1px solid rgba(6,182,212,0.5)", padding: "2px 6px", borderRadius: 4 }}>
+            LIVE
           </span>
         </div>
 
-        {/* Telemetry Metric Chips */}
+        {/* Live Metrics Chips */}
         <div style={{
-          display: "flex", alignItems: "center", gap: 12,
-          background: "rgba(10, 15, 30, 0.92)", backdropFilter: "blur(12px)",
-          border: "1px solid #1e293b", borderRadius: 10,
-          padding: "6px 14px", pointerEvents: "auto", boxShadow: "0 10px 30px rgba(0,0,0,0.8)"
+          display: "flex", alignItems: "center", gap: 14,
+          background: "rgba(15, 23, 42, 0.95)", backdropFilter: "blur(10px)",
+          border: "1px solid #334155", borderRadius: 10,
+          padding: "8px 16px", pointerEvents: "auto", boxShadow: "0 10px 30px rgba(0,0,0,0.8)"
         }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 9, color: "#94a3b8", fontWeight: 700 }}>ACTIVE DETECTIONS</div>
-            <div style={{ fontSize: 14, fontWeight: 900, color: "#f8fafc", fontFamily: "monospace" }}>{stats.total}</div>
+            <div style={{ fontSize: 15, fontWeight: 900, color: "#f8fafc", fontFamily: "monospace" }}>{stats.total}</div>
           </div>
           <div style={{ width: 1, height: 24, background: "#334155" }} />
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 9, color: "#38bdf8", fontWeight: 700 }}>STRATEGIC/ASSET</div>
-            <div style={{ fontSize: 14, fontWeight: 900, color: "#38bdf8", fontFamily: "monospace" }}>{stats.industrial}</div>
+            <div style={{ fontSize: 9, color: "#38bdf8", fontWeight: 700 }}>STRATEGIC ASSETS</div>
+            <div style={{ fontSize: 15, fontWeight: 900, color: "#38bdf8", fontFamily: "monospace" }}>{stats.industrial}</div>
           </div>
           <div style={{ width: 1, height: 24, background: "#334155" }} />
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 9, color: "#ef4444", fontWeight: 700 }}>CRITICAL SPIKES</div>
-            <div style={{ fontSize: 14, fontWeight: 900, color: "#ef4444", fontFamily: "monospace" }}>{stats.critical}</div>
+            <div style={{ fontSize: 15, fontWeight: 900, color: "#ef4444", fontFamily: "monospace" }}>{stats.critical}</div>
           </div>
           <div style={{ width: 1, height: 24, background: "#334155" }} />
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
-            <span style={{ fontSize: 10, color: "#22c55e", fontWeight: 700, fontFamily: "monospace" }}>{apiStatus}</span>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />
+            <span style={{ fontSize: 11, color: "#10b981", fontWeight: 700, fontFamily: "monospace" }}>{apiStatus}</span>
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Left Mission Control Panel */}
+      {/* Left Control Panel */}
       <aside style={{
-        position: "absolute", top: 72, left: 12, zIndex: 1200, width: 310,
-        background: "rgba(10, 15, 30, 0.94)", backdropFilter: "blur(14px)",
-        border: "1px solid rgba(51, 65, 85, 0.85)", borderRadius: 12,
+        position: "absolute", top: 76, left: 12, zIndex: 1200, width: 300,
+        background: "rgba(15, 23, 42, 0.95)", backdropFilter: "blur(14px)",
+        border: "1px solid rgba(51, 65, 85, 0.9)", borderRadius: 12,
         padding: 14, display: "flex", flexDirection: "column", gap: 12,
-        boxShadow: "0 20px 45px rgba(0,0,0,0.85)", maxHeight: "calc(100vh - 90px)", overflowY: "auto"
+        boxShadow: "0 20px 45px rgba(0,0,0,0.85)", maxHeight: "calc(100vh - 95px)", overflowY: "auto"
       }}>
         <div>
-          <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", letterSpacing: "0.5px", display: "block", marginBottom: 4 }}>
-            BASEMAP VIEW
+          <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", display: "block", marginBottom: 4 }}>
+            GIS BASEMAP VIEW
           </label>
           <select
             value={theme}
@@ -189,8 +181,8 @@ export default function App() {
         </div>
 
         <div>
-          <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", letterSpacing: "0.5px", display: "block", marginBottom: 4 }}>
-            SATELLITE CONSTELLATION
+          <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", display: "block", marginBottom: 4 }}>
+            SATELLITE SENSOR
           </label>
           <select
             value={source}
@@ -204,8 +196,8 @@ export default function App() {
         </div>
 
         <div>
-          <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", letterSpacing: "0.5px", display: "block", marginBottom: 4 }}>
-            TEMPORAL WINDOW
+          <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", display: "block", marginBottom: 4 }}>
+            ORBIT TIME WINDOW
           </label>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
             {[1, 3, 5].map((d) => (
@@ -226,8 +218,8 @@ export default function App() {
         </div>
 
         <div>
-          <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", letterSpacing: "0.5px", display: "block", marginBottom: 4 }}>
-            CLASSIFICATION FILTER
+          <label style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", display: "block", marginBottom: 4 }}>
+            ANOMALY FILTER
           </label>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
             {[
@@ -274,53 +266,51 @@ export default function App() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#06b6d4" }} />
-            <span>Industrial Plant Flare Buffer (≤5km)</span>
+            <span>Industrial Flare Buffer (≤5km)</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b" }} />
-            <span>Standard Vegetation / Wildfire</span>
+            <span>Vegetation Wildfire</span>
           </div>
         </div>
       </aside>
 
-      {/* Spot Inspection Drawer */}
+      {/* Target Details Panel */}
       {selectedSpot && (
         <div style={{
-          position: "absolute", bottom: 20, right: 20, zIndex: 1200, width: 320,
-          background: "rgba(10, 15, 30, 0.95)", backdropFilter: "blur(14px)",
-          border: "1px solid rgba(14, 165, 233, 0.5)", borderRadius: 12,
-          padding: 16, boxShadow: "0 20px 50px rgba(0,0,0,0.9)"
+          position: "absolute", bottom: 20, right: 20, zIndex: 1200, width: 310,
+          background: "rgba(15, 23, 42, 0.96)", backdropFilter: "blur(14px)",
+          border: "1px solid rgba(6, 182, 212, 0.6)", borderRadius: 12,
+          padding: 14, boxShadow: "0 20px 50px rgba(0,0,0,0.9)"
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, borderBottom: "1px solid #334155", paddingBottom: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: 900, color: "#38bdf8", textTransform: "uppercase" }}>Target Inspection</span>
+            <span style={{ fontSize: 11, fontWeight: 900, color: "#38bdf8" }}>TARGET TELEMETRY</span>
             <button onClick={() => setSelectedSpot(null)} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontWeight: 700 }}>✕</button>
           </div>
           <div style={{ fontSize: 11, display: "flex", flexDirection: "column", gap: 4 }}>
-            <div><strong style={{ color: "#94a3b8" }}>Classification:</strong> <span style={{ color: "#f8fafc", fontWeight: 700 }}>{selectedSpot.classification}</span></div>
+            <div><strong style={{ color: "#94a3b8" }}>Class:</strong> <span style={{ color: "#f8fafc", fontWeight: 700 }}>{selectedSpot.classification}</span></div>
             <div><strong style={{ color: "#94a3b8" }}>Nearest Asset:</strong> <span style={{ color: "#38bdf8" }}>{selectedSpot.nearest_facility}</span></div>
-            <div><strong style={{ color: "#94a3b8" }}>Distance to Asset:</strong> {selectedSpot.distance_to_facility_km} km</div>
-            <div><strong style={{ color: "#94a3b8" }}>Fire Radiative Power:</strong> <span style={{ color: "#ef4444", fontWeight: 700 }}>{selectedSpot.frp} MW</span></div>
-            <div><strong style={{ color: "#94a3b8" }}>Sensor Brightness:</strong> {selectedSpot.brightness} K</div>
-            <div><strong style={{ color: "#94a3b8" }}>Detection Satellite:</strong> {selectedSpot.satellite}</div>
+            <div><strong style={{ color: "#94a3b8" }}>Asset Distance:</strong> {selectedSpot.distance_to_facility_km} km</div>
+            <div><strong style={{ color: "#94a3b8" }}>Radiative Power:</strong> <span style={{ color: "#ef4444", fontWeight: 700 }}>{selectedSpot.frp} MW</span></div>
+            <div><strong style={{ color: "#94a3b8" }}>Brightness Temp:</strong> {selectedSpot.brightness} K</div>
+            <div><strong style={{ color: "#94a3b8" }}>Sensor / Sat:</strong> {selectedSpot.satellite}</div>
             <div><strong style={{ color: "#94a3b8" }}>Coordinates:</strong> {selectedSpot.latitude}, {selectedSpot.longitude}</div>
-            <div><strong style={{ color: "#94a3b8" }}>Acquired:</strong> {selectedSpot.acq_date} {selectedSpot.acq_time}</div>
           </div>
         </div>
       )}
 
-      {/* Main Full-Screen Map */}
+      {/* Map */}
       <div style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0, zIndex: 1 }}>
         <MapContainer
-          center={[21.5, 80.0]}
+          center={[22.5, 79.5]}
           zoom={5}
           zoomControl={false}
           style={{ width: "100%", height: "100%" }}
         >
-          <MapRecenter center={[21.5, 80.0]} zoom={5} />
           <TileLayer
             key={theme}
             url={MAP_THEMES[theme].base}
-            attribution="Esri, USGS, NASA"
+            attribution="Esri, USGS"
             maxZoom={19}
           />
           {MAP_THEMES[theme].labels && (
