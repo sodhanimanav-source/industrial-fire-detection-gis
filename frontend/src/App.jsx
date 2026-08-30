@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -215,11 +215,11 @@ export default function App() {
             className="glow-btn"
             style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid #00f0ff', color: '#00f0ff', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
           >
-            {showSidePanel ? '◀ HIDE HUD' : '▶ OPEN HUD'}
+            {showSidePanel ? 'â—€ HIDE HUD' : 'â–¶ OPEN HUD'}
           </button>
           <div>
             <h1 style={{ fontSize: '1.25rem', margin: 0, color: '#f8fafc', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ color: '#00f0ff' }}>⬡</span> INDUSTRIAL FIRE & ANOMALY GIS <span style={{ fontSize: '0.7rem', color: '#00f0ff', border: '1px solid #00f0ff', padding: '1px 5px', borderRadius: '3px' }}>LIVE</span>
+              <span style={{ color: '#00f0ff' }}>â¬¡</span> INDUSTRIAL FIRE & ANOMALY GIS <span style={{ fontSize: '0.7rem', color: '#00f0ff', border: '1px solid #00f0ff', padding: '1px 5px', borderRadius: '3px' }}>LIVE</span>
             </h1>
           </div>
         </div>
@@ -227,10 +227,10 @@ export default function App() {
         {/* Real-time Telemetry Metrics */}
         <div style={{ display: 'flex', gap: '14px', fontSize: '0.85rem' }}>
           <div className="glass-panel" style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid rgba(0, 240, 255, 0.4)' }}>
-            🏭 STRATEGIC SITES: <strong style={{ color: '#00f0ff', textShadow: '0 0 8px #00f0ff' }}>{facilities.length}</strong>
+            ðŸ­ STRATEGIC SITES: <strong style={{ color: '#00f0ff', textShadow: '0 0 8px #00f0ff' }}>{facilities.length}</strong>
           </div>
           <div className="glass-panel" style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid rgba(239, 68, 68, 0.4)' }}>
-            📡 ACTIVE DETECTIONS: <strong style={{ color: '#f87171', textShadow: '0 0 8px #ef4444' }}>{filteredHotspots.length}</strong>
+            ðŸ“¡ ACTIVE DETECTIONS: <strong style={{ color: '#f87171', textShadow: '0 0 8px #ef4444' }}>{filteredHotspots.length}</strong>
           </div>
           <div className="glass-panel" style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid rgba(34, 197, 94, 0.4)' }}>
             STATUS: <strong style={{ color: '#4ade80' }}>CONNECTED (0ms LAG)</strong>
@@ -248,7 +248,7 @@ export default function App() {
             {/* 1. Map Sci-Fi Theme Selector */}
             <div>
               <label style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                🗺️ GIS Base Tile Theme
+                ðŸ—ºï¸ GIS Base Tile Theme
               </label>
               <select 
                 value={currentTheme}
@@ -264,7 +264,7 @@ export default function App() {
             {/* 2. Holographic Pulse Toggle */}
             <div>
               <label style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                ✨ Holographic Optics
+                âœ¨ Holographic Optics
               </label>
               <div style={{ marginTop: '6px', display: 'flex', gap: '8px' }}>
                 <button
@@ -282,7 +282,7 @@ export default function App() {
                     boxShadow: enablePulse ? '0 0 10px rgba(0, 240, 255, 0.4)' : 'none'
                   }}
                 >
-                  {enablePulse ? '⚡ Hologram Pulse: ON' : 'Radar Pulse: OFF'}
+                  {enablePulse ? 'âš¡ Hologram Pulse: ON' : 'Radar Pulse: OFF'}
                 </button>
               </div>
             </div>
@@ -290,24 +290,24 @@ export default function App() {
             {/* 3. Satellite Sensor Constellation Selector */}
             <div>
               <label style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                🛰️ Satellite Source
+                ðŸ›°ï¸ Satellite Source
               </label>
               <select 
                 value={selectedSensor}
                 onChange={(e) => setSelectedSensor(e.target.value)}
                 style={{ width: '100%', marginTop: '6px', background: '#0f172a', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.4)', padding: '8px', borderRadius: '6px', fontSize: '0.85rem' }}
               >
-                <option value="ALL">📡 All Satellites (Merged)</option>
-                <option value="NOAA20">🛰️ VIIRS NOAA-20 (750m High Res)</option>
-                <option value="SNPP">🛰️ VIIRS Suomi-NPP (375m I-Band)</option>
-                <option value="MODIS">🛰️ Terra/Aqua MODIS (1km Thermal)</option>
+                <option value="ALL">ðŸ“¡ All Satellites (Merged)</option>
+                <option value="NOAA20">ðŸ›°ï¸ VIIRS NOAA-20 (750m High Res)</option>
+                <option value="SNPP">ðŸ›°ï¸ VIIRS Suomi-NPP (375m I-Band)</option>
+                <option value="MODIS">ðŸ›°ï¸ Terra/Aqua MODIS (1km Thermal)</option>
               </select>
             </div>
 
             {/* 4. Time Window */}
             <div>
               <label style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                ⏱️ Orbit Time Window
+                â±ï¸ Orbit Time Window
               </label>
               <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
                 {[1, 3, 5].map(d => (
@@ -335,7 +335,7 @@ export default function App() {
             {/* 5. Hotspot Threat Classification Filter */}
             <div>
               <label style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                🔥 Anomaly Type Filters
+                ðŸ”¥ Anomaly Type Filters
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginTop: '6px' }}>
                 {['ALL', 'CRITICAL', 'INDUSTRIAL', 'WILDFIRE'].map(tab => (
@@ -387,7 +387,7 @@ export default function App() {
               >
                 <Popup>
                   <div style={{ color: '#000', fontFamily: 'system-ui' }}>
-                    <strong style={{ color: '#0284c7' }}>🏭 {fac.name}</strong><br />
+                    <strong style={{ color: '#0284c7' }}>ðŸ­ {fac.name}</strong><br />
                     Type: <strong>{fac.type || 'Industrial Asset'}</strong><br />
                     Radius Boundary: <strong>{fac.buffer_km || 4.5} km</strong>
                   </div>
