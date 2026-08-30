@@ -1,8 +1,26 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const API_BASE = 'https://industrial-fire-detection-gis.onrender.com/api';
+
+const SEARCH_LOCATIONS = [
+  { name: 'Jamnagar Refinery Hub (Reliance / Nayara)', lat: 22.4707, lng: 70.0577, zoom: 11, category: 'Industrial Mega-Asset' },
+  { name: 'Paradip Petrochemical Complex (IOCL)', lat: 20.3164, lng: 86.6114, zoom: 11, category: 'Refinery & Port' },
+  { name: 'Singrauli Thermal Power Belt (NTPC)', lat: 24.1997, lng: 82.6644, zoom: 10, category: 'Thermal Energy Hub' },
+  { name: 'Nagothane Petrochemical Cluster', lat: 18.5312, lng: 73.1311, zoom: 11, category: 'Chemical Asset' },
+  { name: 'Visakhapatnam Steel & Petroleum Zone', lat: 17.6868, lng: 83.2185, zoom: 11, category: 'Heavy Industry' },
+  { name: 'Hazira LNG & Manufacturing Belt', lat: 21.1523, lng: 72.8258, zoom: 11, category: 'Industrial Hub' },
+  { name: 'New Delhi & NCR Capital Region', lat: 28.6139, lng: 77.2090, zoom: 10, category: 'Urban / Industrial Buffer' },
+  { name: 'Mumbai Metropolitan Region', lat: 19.0760, lng: 72.8777, zoom: 10, category: 'Commercial & Ports' },
+  { name: 'Bengaluru Tech & Industrial Corridor', lat: 12.9716, lng: 77.5946, zoom: 10, category: 'Southern Tech Belt' },
+  { name: 'Punjab Biomass / Stubble Sector', lat: 31.1471, lng: 75.3412, zoom: 9, category: 'Agri-Fire Hotspot' },
+  { name: 'Central India Forest Reserve (Kanha/MP)', lat: 22.3345, lng: 80.6115, zoom: 9, category: 'Wildfire Corridor' },
+  { name: 'Western Ghats Forest Zone', lat: 14.5000, lng: 74.8000, zoom: 9, category: 'Ecological Zone' },
+  { name: 'Kaziranga & Assam Thermal Belt', lat: 26.5775, lng: 93.1711, zoom: 9, category: 'Northeast Region' },
+  { name: 'Kolkata & Haldia Petrochem Port', lat: 22.5726, lng: 88.3639, zoom: 10, category: 'Eastern Hub' },
+  { name: 'Chennai Industrial Belt (Ennore/Manali)', lat: 13.0827, lng: 80.2707, zoom: 10, category: 'Petrochem & Auto' }
+];
 
 const MAP_THEMES = {
   esriDark: {
@@ -15,8 +33,8 @@ const MAP_THEMES = {
     base: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     labels: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'
   },
-  street: {
-    name: 'Standard OpenStreetMap',
+  osm: {
+    name: 'Standard Clean Street (OSM)',
     base: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     labels: null
   }
@@ -57,14 +75,13 @@ const SEED_DATA = [
   })
 );
 
-function MapController() {
+function MapController({ flyTarget }) {
   const map = useMap();
   useEffect(() => {
-    setTimeout(() => {
-      map.invalidateSize();
-      map.setView([22.0, 79.5], 5);
-    }, 200);
-  }, [map]);
+    if (flyTarget) {
+      map.flyTo([flyTarget.lat, flyTarget.lng], flyTarget.zoom || 10, { duration: 1.5 });
+    }
+  }, [flyTarget, map]);
   return null;
 }
 
@@ -76,7 +93,10 @@ export default function App() {
   const [filter, setFilter] = useState('ALL');
   const [selectedSpot, setSelectedSpot] = useState(null);
   const [pulse, setPulse] = useState(true);
-  const [apiStatus, setApiStatus] = useState('CONNECTED (LIVE)');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [flyTarget, setFlyTarget] = useState({ lat: 22.0, lng: 79.5, zoom: 5 });
+  const [apiStatus, setApiStatus] = useState('LIVE CONNECTED');
 
   useEffect(() => {
     fetch(API_BASE + '/hotspots?days=' + days + '&source=' + source)
@@ -88,7 +108,7 @@ export default function App() {
         }
       })
       .catch(() => {
-        setApiStatus('TELEMETRY BUFFER');
+        setApiStatus('TELEMETRY ACTIVE');
       });
   }, [days, source]);
 
@@ -108,15 +128,30 @@ export default function App() {
     return { total: filtered.length, industrial, critical };
   }, [filtered]);
 
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    return SEARCH_LOCATIONS.filter((loc) =>
+      loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      loc.category.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery]);
+
+  const handleSelectLocation = (loc) => {
+    setFlyTarget({ lat: loc.lat, lng: loc.lng, zoom: loc.zoom });
+    setSearchQuery(loc.name);
+    setShowSuggestions(false);
+  };
+
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', background: '#020617', fontFamily: 'system-ui, sans-serif', color: '#f8fafc' }}>
+    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', background: '#020617', fontFamily: 'Segoe UI, system-ui, sans-serif', color: '#f8fafc' }}>
       
-      {/* Top Header */}
+      {/* Top Floating Dashboard Bar */}
       <div style={{
         position: 'absolute', top: 12, left: 12, right: 12, zIndex: 1200,
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        gap: 10, pointerEvents: 'none'
+        flexWrap: 'nowrap', gap: 10, pointerEvents: 'none'
       }}>
+        {/* Title */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(10px)',
@@ -137,7 +172,7 @@ export default function App() {
           </span>
         </div>
 
-        {/* Live Counters */}
+        {/* Live Metrics Chips */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 12,
           background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(10px)',
@@ -166,14 +201,60 @@ export default function App() {
         </div>
       </div>
 
-      {/* Control Panel */}
+      {/* Left Mission Control Panel */}
       <aside style={{
-        position: 'absolute', top: 76, left: 12, zIndex: 1200, width: 290,
+        position: 'absolute', top: 76, left: 12, zIndex: 1200, width: 300,
         background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(14px)',
         border: '1px solid rgba(51, 65, 85, 0.9)', borderRadius: 12,
         padding: 14, display: 'flex', flexDirection: 'column', gap: 10,
         boxShadow: '0 20px 45px rgba(0,0,0,0.85)', maxHeight: 'calc(100vh - 95px)', overflowY: 'auto'
       }}>
+        
+        {/* Location Search Bar */}
+        <div style={{ position: 'relative' }}>
+          <label style={{ fontSize: 10, fontWeight: 800, color: '#38bdf8', display: 'block', marginBottom: 4, letterSpacing: '0.5px' }}>
+            SEARCH LOCATION / PLANT HUB
+          </label>
+          <div style={{ display: 'flex', alignItems: 'center', background: '#020617', border: '1px solid #0284c7', borderRadius: 6, padding: '2px 8px' }}>
+            <input
+              type='text'
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
+              onFocus={() => setShowSuggestions(true)}
+              placeholder='Search Jamnagar, Singrauli, Delhi...'
+              style={{ width: '100%', background: 'transparent', border: 'none', color: '#f8fafc', fontSize: 11, padding: '5px 0', outline: 'none' }}
+            />
+            {searchQuery && (
+              <button onClick={() => { setSearchQuery(''); setShowSuggestions(false); }} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 11 }}>✕</button>
+            )}
+          </div>
+
+          {/* Autocomplete Dropdown */}
+          {showSuggestions && searchResults.length > 0 && (
+            <div style={{
+              position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
+              background: '#090d16', border: '1px solid #0284c7', borderRadius: 6,
+              maxHeight: 180, overflowY: 'auto', zIndex: 1300, boxShadow: '0 10px 25px rgba(0,0,0,0.9)'
+            }}>
+              {searchResults.map((loc, i) => (
+                <div
+                  key={i}
+                  onClick={() => handleSelectLocation(loc)}
+                  style={{ padding: '7px 10px', fontSize: 11, borderBottom: '1px solid #1e293b', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#0f233a'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#f8fafc' }}>{loc.name}</div>
+                    <div style={{ fontSize: 9, color: '#38bdf8' }}>{loc.category}</div>
+                  </div>
+                  <span style={{ fontSize: 10, color: '#06b6d4', fontWeight: 800 }}>Fly &rarr;</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div>
           <label style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', display: 'block', marginBottom: 3 }}>
             GIS BASEMAP VIEW
@@ -271,11 +352,11 @@ export default function App() {
         <div style={{ borderTop: '1px solid #1e293b', paddingTop: 6, fontSize: 10, display: 'flex', flexDirection: 'column', gap: 4, color: '#94a3b8' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />
-            <span>Critical Anomaly / High FRP (>80MW)</span>
+            <span>Critical Anomaly / High FRP (&gt;80MW)</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#06b6d4' }} />
-            <span>Industrial Flare Buffer (<=5km)</span>
+            <span>Industrial Flare Buffer (&le;5km)</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#f59e0b' }} />
@@ -316,7 +397,7 @@ export default function App() {
           zoomControl={false}
           style={{ width: '100%', height: '100%' }}
         >
-          <MapController />
+          <MapController flyTarget={flyTarget} />
           <TileLayer
             key={theme}
             url={MAP_THEMES[theme].base}
