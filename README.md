@@ -6,7 +6,7 @@ An AI/ML & Satellite-driven spatial intelligence dashboard engineered for real-t
 
 ## 🚀 Live Demo
 
-* **Web App (Interactive UI):** https://industrial-fire-detection-gis.netlify.app
+* **Web App (Interactive UI):** https://idustria-fire-detection.netlify.app
 * **API Documentation & OpenAPI:** https://industrial-fire-detection-gis.onrender.com/docs
 * **Live Health & Telemetry Feed:** https://industrial-fire-detection-gis.onrender.com/api/hotspots
 
