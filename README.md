@@ -1,4 +1,4 @@
-# 🛰️ Industrial Fire & Anomaly GIS Dashboard (Pan-India)
+﻿# 🛰️ Industrial Fire & Anomaly GIS Dashboard (Pan-India)
 
 An AI/ML & Satellite-driven spatial intelligence dashboard engineered for real-time industrial flaring detection, high-heat anomaly surveillance, and wildfire differentiation across 196+ critical Pan-India infrastructure assets.
 
@@ -6,7 +6,7 @@ An AI/ML & Satellite-driven spatial intelligence dashboard engineered for real-t
 
 ## 🚀 Live Demo
 
-* **Web App (Interactive UI):** https://idustria-fire-detection.netlify.app
+* **Web App (Interactive UI):** https://industrial-fire-detection-gis.vercel.app
 * **API Documentation & OpenAPI:** https://industrial-fire-detection-gis.onrender.com/docs
 * **Live Health & Telemetry Feed:** https://industrial-fire-detection-gis.onrender.com/api/hotspots
 
@@ -29,3 +29,4 @@ An AI/ML & Satellite-driven spatial intelligence dashboard engineered for real-t
 3. **ML Thermal Anomaly Isolation:** Unsupervised isolation scoring determining baseline operational flaring versus critical hazard spikes.
 4. **Future-Tech HUD Experience:** 60 FPS Canvas rendering with holographic optics, live radar pulsing, and CartoDB Dark Matter tile themes.
 5. **Zero-Lag Dynamic Filtering:** Instant client-side and server-side toggles for threat severity, orbit timeframes (24h/3d/5d), and sensor sources.
+
