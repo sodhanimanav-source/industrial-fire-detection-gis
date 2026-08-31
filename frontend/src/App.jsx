@@ -145,6 +145,14 @@ function MapController({ flyTarget }) {
       map.flyTo([flyTarget.lat, flyTarget.lng], flyTarget.zoom || 5, { duration: 1.5 });
     }
   }, [flyTarget, map]);
+
+  useEffect(() => {
+    // Invalidate map size after DOM mount to ensure smooth panning
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 250);
+  }, [map]);
+
   return null;
 }
 
@@ -159,7 +167,6 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [flyTarget, setFlyTarget] = useState({ lat: 20.0, lng: 79.0, zoom: 5 });
-  const [apiStatus, setApiStatus] = useState('CONNECTED');
   const [latency, setLatency] = useState(16);
   const [hideHud, setHideHud] = useState(false);
 
@@ -202,14 +209,14 @@ export default function App() {
   };
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', background: '#020617', fontFamily: 'Segoe UI, system-ui, sans-serif', color: '#f8fafc' }}>
+    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#020617', fontFamily: 'Segoe UI, system-ui, sans-serif', color: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
       
-      {/* Top Header Bar - Exact Layout Preserved */}
+      {/* Top Header Bar - High Z-Index & Clean Layout */}
       <header style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: 56, zIndex: 1000,
+        height: 56, width: '100%', zIndex: 2000,
         background: '#090d16', borderBottom: '1px solid #1e293b',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 16px', boxShadow: '0 4px 20px rgba(0,0,0,0.8)'
+        padding: '0 16px', boxSizing: 'border-box'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button
@@ -233,7 +240,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Counters Matrix */}
+        {/* Status Counters */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
             background: '#020617', border: '1px solid #1e293b', borderRadius: 6,
@@ -261,202 +268,204 @@ export default function App() {
         </div>
       </header>
 
-      {/* Left Mission Control Panel */}
-      {!hideHud && (
-        <aside style={{
-          position: 'absolute', top: 68, left: 12, zIndex: 1000, width: 290,
-          background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(10px)',
-          border: '1px solid #334155', borderRadius: 8,
-          padding: 12, display: 'flex', flexDirection: 'column', gap: 10,
-          boxShadow: '0 10px 30px rgba(0,0,0,0.85)', maxHeight: 'calc(100vh - 85px)', overflowY: 'auto'
-        }}>
-          
-          {/* Fly-To Search */}
-          <div style={{ position: 'relative' }}>
-            <label style={{ fontSize: 10, fontWeight: 800, color: '#38bdf8', display: 'block', marginBottom: 4 }}>
-              SEARCH LOCATION / PLANT HUB
-            </label>
-            <div style={{ display: 'flex', alignItems: 'center', background: '#020617', border: '1px solid #0284c7', borderRadius: 6, padding: '2px 8px' }}>
-              <input
-                type='text'
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
-                onFocus={() => setShowSuggestions(true)}
-                placeholder='Search Colombo, Jamnagar, UP...'
-                style={{ width: '100%', background: 'transparent', border: 'none', color: '#f8fafc', fontSize: 11, padding: '4px 0', outline: 'none' }}
-              />
-              {searchQuery && (
-                <button onClick={() => { setSearchQuery(''); setShowSuggestions(false); }} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 11 }}>✕</button>
+      {/* Main Container */}
+      <div style={{ flex: 1, position: 'relative', width: '100%', height: 'calc(100vh - 56px)' }}>
+        
+        {/* Left Mission Control Panel */}
+        {!hideHud && (
+          <aside style={{
+            position: 'absolute', top: 12, left: 12, zIndex: 1000, width: 290,
+            background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(10px)',
+            border: '1px solid #334155', borderRadius: 8,
+            padding: 12, display: 'flex', flexDirection: 'column', gap: 10,
+            boxShadow: '0 10px 30px rgba(0,0,0,0.85)', maxHeight: 'calc(100% - 24px)', overflowY: 'auto'
+          }}>
+            
+            {/* Fly-To Search */}
+            <div style={{ position: 'relative' }}>
+              <label style={{ fontSize: 10, fontWeight: 800, color: '#38bdf8', display: 'block', marginBottom: 4 }}>
+                SEARCH LOCATION / PLANT HUB
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', background: '#020617', border: '1px solid #0284c7', borderRadius: 6, padding: '2px 8px' }}>
+                <input
+                  type='text'
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
+                  onFocus={() => setShowSuggestions(true)}
+                  placeholder='Search Colombo, Jamnagar, UP...'
+                  style={{ width: '100%', background: 'transparent', border: 'none', color: '#f8fafc', fontSize: 11, padding: '4px 0', outline: 'none' }}
+                />
+                {searchQuery && (
+                  <button onClick={() => { setSearchQuery(''); setShowSuggestions(false); }} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 11 }}>✕</button>
+                )}
+              </div>
+
+              {showSuggestions && searchResults.length > 0 && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
+                  background: '#090d16', border: '1px solid #0284c7', borderRadius: 6,
+                  maxHeight: 180, overflowY: 'auto', zIndex: 1300, boxShadow: '0 10px 25px rgba(0,0,0,0.9)'
+                }}>
+                  {searchResults.map((loc, i) => (
+                    <div
+                      key={i}
+                      onClick={() => handleSelectLocation(loc)}
+                      style={{ padding: '7px 10px', fontSize: 11, borderBottom: '1px solid #1e293b', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#0f233a'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 700, color: '#f8fafc' }}>{loc.name}</div>
+                        <div style={{ fontSize: 9, color: '#38bdf8' }}>{loc.category}</div>
+                      </div>
+                      <span style={{ fontSize: 10, color: '#06b6d4', fontWeight: 800 }}>Fly &rarr;</span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
-            {showSuggestions && searchResults.length > 0 && (
-              <div style={{
-                position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
-                background: '#090d16', border: '1px solid #0284c7', borderRadius: 6,
-                maxHeight: 180, overflowY: 'auto', zIndex: 1300, boxShadow: '0 10px 25px rgba(0,0,0,0.9)'
-              }}>
-                {searchResults.map((loc, i) => (
-                  <div
-                    key={i}
-                    onClick={() => handleSelectLocation(loc)}
-                    style={{ padding: '7px 10px', fontSize: 11, borderBottom: '1px solid #1e293b', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#0f233a'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', display: 'block', marginBottom: 3 }}>
+                GIS BASE TILE THEME
+              </label>
+              <select
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                style={{ width: '100%', background: '#020617', border: '1px solid #334155', color: '#f8fafc', borderRadius: 6, padding: '5px 8px', fontSize: 11, outline: 'none' }}
+              >
+                {Object.entries(MAP_THEMES).map(([k, v]) => (
+                  <option key={k} value={k}>{v.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <button
+                onClick={() => setPulse(!pulse)}
+                style={{
+                  width: '100%', padding: '6px', fontSize: 11, fontWeight: 800, borderRadius: 6, cursor: 'pointer',
+                  border: pulse ? '1px solid #06b6d4' : '1px solid #334155',
+                  background: pulse ? 'rgba(6, 182, 212, 0.2)' : '#020617',
+                  color: pulse ? '#67e8f9' : '#94a3b8'
+                }}
+              >
+                Hologram Pulse: {pulse ? 'ON' : 'OFF'}
+              </button>
+            </div>
+
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', display: 'block', marginBottom: 3 }}>
+                SATELLITE SOURCE
+              </label>
+              <select
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                style={{ width: '100%', background: '#020617', border: '1px solid #334155', color: '#f8fafc', borderRadius: 6, padding: '5px 8px', fontSize: 11, outline: 'none' }}
+              >
+                <option value='ALL'>All Satellites (Merged)</option>
+                <option value='VIIRS_NOAA20_NRT'>VIIRS NOAA-20 (375m)</option>
+                <option value='MODIS_NRT'>MODIS Terra/Aqua (1km)</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', display: 'block', marginBottom: 3 }}>
+                ORBIT TIME WINDOW
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5 }}>
+                {[1, 3, 5].map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setDays(d)}
+                    style={{
+                      padding: '5px 0', fontSize: 10, fontWeight: 800, borderRadius: 6, cursor: 'pointer',
+                      border: days === d ? '1px solid #f59e0b' : '1px solid #1e293b',
+                      background: days === d ? 'rgba(245, 158, 11, 0.25)' : '#020617',
+                      color: days === d ? '#fcd34d' : '#94a3b8'
+                    }}
                   >
-                    <div>
-                      <div style={{ fontWeight: 700, color: '#f8fafc' }}>{loc.name}</div>
-                      <div style={{ fontSize: 9, color: '#38bdf8' }}>{loc.category}</div>
-                    </div>
-                    <span style={{ fontSize: 10, color: '#06b6d4', fontWeight: 800 }}>Fly &rarr;</span>
-                  </div>
+                    {d === 1 ? '24 Hours' : d + ' Days'}
+                  </button>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
 
-          <div>
-            <label style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', display: 'block', marginBottom: 3 }}>
-              GIS BASE TILE THEME
-            </label>
-            <select
-              value={theme}
-              onChange={(e) => setTheme(e.target.value)}
-              style={{ width: '100%', background: '#020617', border: '1px solid #334155', color: '#f8fafc', borderRadius: 6, padding: '5px 8px', fontSize: 11, outline: 'none' }}
-            >
-              {Object.entries(MAP_THEMES).map(([k, v]) => (
-                <option key={k} value={k}>{v.name}</option>
-              ))}
-            </select>
-          </div>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', display: 'block', marginBottom: 3 }}>
+                ANOMALY TYPE FILTERS
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
+                {[
+                  { id: 'ALL', label: 'ALL' },
+                  { id: 'CRITICAL', label: 'CRITICAL' },
+                  { id: 'INDUSTRIAL', label: 'INDUSTRIAL' },
+                  { id: 'WILDFIRE', label: 'WILDFIRE' }
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setFilter(f.id)}
+                    style={{
+                      padding: '6px 0', fontSize: 10, fontWeight: 800, borderRadius: 6, cursor: 'pointer',
+                      border: filter === f.id ? '1px solid #0284c7' : '1px solid #1e293b',
+                      background: filter === f.id ? '#0369a1' : '#020617',
+                      color: filter === f.id ? '#ffffff' : '#94a3b8'
+                    }}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <div>
-            <button
-              onClick={() => setPulse(!pulse)}
-              style={{
-                width: '100%', padding: '6px', fontSize: 11, fontWeight: 800, borderRadius: 6, cursor: 'pointer',
-                border: pulse ? '1px solid #06b6d4' : '1px solid #334155',
-                background: pulse ? 'rgba(6, 182, 212, 0.2)' : '#020617',
-                color: pulse ? '#67e8f9' : '#94a3b8'
-              }}
-            >
-              Hologram Pulse: {pulse ? 'ON' : 'OFF'}
-            </button>
-          </div>
+            <div style={{ borderTop: '1px solid #1e293b', paddingTop: 6, fontSize: 10, display: 'flex', flexDirection: 'column', gap: 4, color: '#94a3b8' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />
+                <span>Critical Anomaly / High FRP (&gt;80MW)</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#06b6d4' }} />
+                <span>Industrial Flare Buffer (&le;5km)</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#f59e0b' }} />
+                <span>Vegetation Wildfire</span>
+              </div>
+            </div>
+          </aside>
+        )}
 
-          <div>
-            <label style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', display: 'block', marginBottom: 3 }}>
-              SATELLITE SOURCE
-            </label>
-            <select
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              style={{ width: '100%', background: '#020617', border: '1px solid #334155', color: '#f8fafc', borderRadius: 6, padding: '5px 8px', fontSize: 11, outline: 'none' }}
-            >
-              <option value='ALL'>All Satellites (Merged)</option>
-              <option value='VIIRS_NOAA20_NRT'>VIIRS NOAA-20 (375m)</option>
-              <option value='MODIS_NRT'>MODIS Terra/Aqua (1km)</option>
-            </select>
-          </div>
-
-          <div>
-            <label style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', display: 'block', marginBottom: 3 }}>
-              ORBIT TIME WINDOW
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5 }}>
-              {[1, 3, 5].map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setDays(d)}
-                  style={{
-                    padding: '5px 0', fontSize: 10, fontWeight: 800, borderRadius: 6, cursor: 'pointer',
-                    border: days === d ? '1px solid #f59e0b' : '1px solid #1e293b',
-                    background: days === d ? 'rgba(245, 158, 11, 0.25)' : '#020617',
-                    color: days === d ? '#fcd34d' : '#94a3b8'
-                  }}
-                >
-                  {d === 1 ? '24 Hours' : d + ' Days'}
-                </button>
-              ))}
+        {/* Target Details Panel (Click Drawer) */}
+        {selectedSpot && (
+          <div style={{
+            position: 'absolute', bottom: 20, right: 20, zIndex: 1100, width: 310,
+            background: 'rgba(15, 23, 42, 0.98)', backdropFilter: 'blur(14px)',
+            border: '1px solid #06b6d4', borderRadius: 8,
+            padding: 14, boxShadow: '0 20px 50px rgba(0,0,0,0.95)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, borderBottom: '1px solid #334155', paddingBottom: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 900, color: '#38bdf8' }}>TARGET TELEMETRY</span>
+              <button onClick={() => setSelectedSpot(null)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+            </div>
+            <div style={{ fontSize: 11, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div><strong style={{ color: '#94a3b8' }}>Classification:</strong> <span style={{ color: '#f8fafc', fontWeight: 700 }}>{selectedSpot.classification}</span></div>
+              <div><strong style={{ color: '#94a3b8' }}>Nearest Facility:</strong> <span style={{ color: '#38bdf8' }}>{selectedSpot.nearest_facility}</span></div>
+              <div><strong style={{ color: '#94a3b8' }}>Asset Offset:</strong> {selectedSpot.distance_to_facility_km} km</div>
+              <div><strong style={{ color: '#94a3b8' }}>Radiative Power:</strong> <span style={{ color: '#ef4444', fontWeight: 700 }}>{selectedSpot.frp} MW</span></div>
+              <div><strong style={{ color: '#94a3b8' }}>Brightness Temp:</strong> {selectedSpot.brightness} K</div>
+              <div><strong style={{ color: '#94a3b8' }}>Sensor Array:</strong> {selectedSpot.satellite}</div>
+              <div><strong style={{ color: '#94a3b8' }}>Telemetry Time:</strong> {selectedSpot.acq_time}</div>
+              <div><strong style={{ color: '#94a3b8' }}>Coordinates:</strong> {selectedSpot.latitude}, {selectedSpot.longitude}</div>
             </div>
           </div>
+        )}
 
-          <div>
-            <label style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', display: 'block', marginBottom: 3 }}>
-              ANOMALY TYPE FILTERS
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
-              {[
-                { id: 'ALL', label: 'ALL' },
-                { id: 'CRITICAL', label: 'CRITICAL' },
-                { id: 'INDUSTRIAL', label: 'INDUSTRIAL' },
-                { id: 'WILDFIRE', label: 'WILDFIRE' }
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setFilter(f.id)}
-                  style={{
-                    padding: '6px 0', fontSize: 10, fontWeight: 800, borderRadius: 6, cursor: 'pointer',
-                    border: filter === f.id ? '1px solid #0284c7' : '1px solid #1e293b',
-                    background: filter === f.id ? '#0369a1' : '#020617',
-                    color: filter === f.id ? '#ffffff' : '#94a3b8'
-                  }}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ borderTop: '1px solid #1e293b', paddingTop: 6, fontSize: 10, display: 'flex', flexDirection: 'column', gap: 4, color: '#94a3b8' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />
-              <span>Critical Anomaly / High FRP (&gt;80MW)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#06b6d4' }} />
-              <span>Industrial Flare Buffer (&le;5km)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#f59e0b' }} />
-              <span>Vegetation Wildfire</span>
-            </div>
-          </div>
-        </aside>
-      )}
-
-      {/* Target Details Panel (Click Telemetry Drawer) */}
-      {selectedSpot && (
-        <div style={{
-          position: 'absolute', bottom: 20, right: 20, zIndex: 1100, width: 310,
-          background: 'rgba(15, 23, 42, 0.98)', backdropFilter: 'blur(14px)',
-          border: '1px solid #06b6d4', borderRadius: 8,
-          padding: 14, boxShadow: '0 20px 50px rgba(0,0,0,0.95)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, borderBottom: '1px solid #334155', paddingBottom: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: 900, color: '#38bdf8' }}>TARGET TELEMETRY</span>
-            <button onClick={() => setSelectedSpot(null)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontWeight: 700 }}>✕</button>
-          </div>
-          <div style={{ fontSize: 11, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div><strong style={{ color: '#94a3b8' }}>Classification:</strong> <span style={{ color: '#f8fafc', fontWeight: 700 }}>{selectedSpot.classification}</span></div>
-            <div><strong style={{ color: '#94a3b8' }}>Nearest Facility:</strong> <span style={{ color: '#38bdf8' }}>{selectedSpot.nearest_facility}</span></div>
-            <div><strong style={{ color: '#94a3b8' }}>Asset Offset:</strong> {selectedSpot.distance_to_facility_km} km</div>
-            <div><strong style={{ color: '#94a3b8' }}>Radiative Power:</strong> <span style={{ color: '#ef4444', fontWeight: 700 }}>{selectedSpot.frp} MW</span></div>
-            <div><strong style={{ color: '#94a3b8' }}>Brightness Temp:</strong> {selectedSpot.brightness} K</div>
-            <div><strong style={{ color: '#94a3b8' }}>Sensor Array:</strong> {selectedSpot.satellite}</div>
-            <div><strong style={{ color: '#94a3b8' }}>Telemetry Time:</strong> {selectedSpot.acq_time}</div>
-            <div><strong style={{ color: '#94a3b8' }}>Coordinates:</strong> {selectedSpot.latitude}, {selectedSpot.longitude}</div>
-          </div>
-        </div>
-      )}
-
-      {/* Interactive Map View */}
-      <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 0 }}>
+        {/* 100% Unconstrained Leaflet Map Canvas */}
         <MapContainer
           center={[20.0, 79.0]}
           zoom={5}
           zoomControl={true}
-          style={{ width: '100%', height: '100%', paddingTop: '56px' }}
+          style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1 }}
         >
           <MapController flyTarget={flyTarget} />
           <TileLayer
@@ -506,6 +515,7 @@ export default function App() {
             );
           })}
         </MapContainer>
+
       </div>
 
     </div>
