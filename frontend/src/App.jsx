@@ -11,18 +11,16 @@ const SEARCH_LOCATIONS = [
   { name: 'Nagothane Petrochemical Cluster', lat: 18.5312, lng: 73.1311, zoom: 11, category: 'Chemical Asset' },
   { name: 'Visakhapatnam Steel & Petroleum Zone', lat: 17.6868, lng: 83.2185, zoom: 11, category: 'Heavy Industry' },
   { name: 'Hazira LNG & Manufacturing Belt', lat: 21.1523, lng: 72.8258, zoom: 11, category: 'Industrial Hub' },
-  { name: 'Colombo - Sapugaskanda Refinery (Sri Lanka)', lat: 6.9654, lng: 79.9328, zoom: 11, category: 'Sri Lanka Strategic Refinery' },
-  { name: 'Norochcholai Lakvijaya Power Complex (Sri Lanka)', lat: 8.0167, lng: 79.7214, zoom: 11, category: 'Sri Lanka Thermal Power' },
-  { name: 'Hambantota International Port & Tank Farm (Sri Lanka)', lat: 6.1248, lng: 81.1185, zoom: 11, category: 'Maritime Energy Asset' },
-  { name: 'Sinharaja Reserve Forest Corridor (Sri Lanka)', lat: 6.4000, lng: 80.4500, zoom: 10, category: 'Sri Lanka Rainforest Belt' },
+  { name: 'Colombo - Sapugaskanda Refinery (Sri Lanka)', lat: 6.9654, lng: 79.9328, zoom: 11, category: 'Sri Lanka Refinery' },
+  { name: 'Norochcholai Lakvijaya Power (Sri Lanka)', lat: 8.0167, lng: 79.7214, zoom: 11, category: 'Sri Lanka Power Hub' },
+  { name: 'Hambantota International Port (Sri Lanka)', lat: 6.1248, lng: 81.1185, zoom: 11, category: 'Maritime Energy Port' },
+  { name: 'Jaffna Northern Peninsula (Sri Lanka)', lat: 9.6615, lng: 80.0255, zoom: 10, category: 'Northern Sri Lanka Hub' },
+  { name: 'Central Highlands & Kandy Belt (Sri Lanka)', lat: 7.2906, lng: 80.6337, zoom: 10, category: 'Central Reserve' },
   { name: 'New Delhi & NCR Capital Region', lat: 28.6139, lng: 77.2090, zoom: 10, category: 'Urban / Industrial Buffer' },
-  { name: 'Mumbai Metropolitan Region', lat: 19.0760, lng: 72.8777, zoom: 10, category: 'Commercial & Ports' },
-  { name: 'Bengaluru Tech & Industrial Corridor', lat: 12.9716, lng: 77.5946, zoom: 10, category: 'Southern Tech Belt' },
   { name: 'Kashmir Valley & Pir Panjal Sector', lat: 34.0837, lng: 74.7973, zoom: 9, category: 'Northern High Altitude' },
-  { name: 'Punjab Biomass / Stubble Sector', lat: 31.1471, lng: 75.3412, zoom: 9, category: 'Agri-Fire Hotspot' },
-  { name: 'Central India Forest Reserve (Kanha/MP)', lat: 22.3345, lng: 80.6115, zoom: 9, category: 'Wildfire Corridor' },
+  { name: 'Uttar Pradesh & Gangetic Agri-Belt', lat: 26.8467, lng: 80.9462, zoom: 9, category: 'Central Gangetic Plain' },
+  { name: 'Bihar & Jharkhand Mining Belt', lat: 23.6102, lng: 85.2799, zoom: 9, category: 'Eastern Industrial Corridor' },
   { name: 'Western Ghats Forest Zone', lat: 14.5000, lng: 74.8000, zoom: 9, category: 'Ecological Zone' },
-  { name: 'Kaziranga & Assam Thermal Belt', lat: 26.5775, lng: 93.1711, zoom: 9, category: 'Northeast Region' },
   { name: 'Chennai Industrial Belt (Ennore/Manali)', lat: 13.0827, lng: 80.2707, zoom: 10, category: 'Petrochem & Auto' }
 ];
 
@@ -47,58 +45,91 @@ const MAP_THEMES = {
 const GENERATE_DYNAMIC_TELEMETRY = () => {
   const now = new Date();
   const dateStr = now.toISOString().split('T')[0];
-  
-  const zones = [
-    { name: 'Reliance Jamnagar Complex', lat: 22.47, lng: 70.06, baseCount: 65, type: 'Industrial / Operational', maxFrp: 195 },
-    { name: 'IOCL Paradip Refinery Complex', lat: 20.31, lng: 86.61, baseCount: 55, type: 'Industrial / Operational', maxFrp: 165 },
-    { name: 'NTPC Singrauli Thermal Belt', lat: 24.20, lng: 82.66, baseCount: 85, type: 'Industrial / Operational', maxFrp: 220 },
-    { name: 'Nagothane Chemical Cluster', lat: 18.53, lng: 73.13, baseCount: 40, type: 'Industrial / Operational', maxFrp: 120 },
-    { name: 'Visakhapatnam Steel Hub', lat: 17.68, lng: 83.21, baseCount: 45, type: 'Industrial / Operational', maxFrp: 140 },
-    { name: 'Hazira LNG Heavy Industrial Belt', lat: 21.15, lng: 72.82, baseCount: 60, type: 'Industrial / Operational', maxFrp: 160 },
-    { name: 'Chennai Manali Petrochemical Zone', lat: 13.16, lng: 80.26, baseCount: 35, type: 'Industrial / Operational', maxFrp: 130 },
-    { name: 'Kochi BPCL Refinery Complex', lat: 9.99, lng: 76.36, baseCount: 30, type: 'Industrial / Operational', maxFrp: 125 },
+  const points = [];
 
-    { name: 'Sapugaskanda Refinery Complex (Sri Lanka)', lat: 6.9654, lng: 79.9328, baseCount: 42, type: 'Industrial / Operational', maxFrp: 145 },
-    { name: 'Norochcholai Lakvijaya Thermal Complex (Sri Lanka)', lat: 8.0167, lng: 79.7214, baseCount: 38, type: 'Industrial / Operational', maxFrp: 160 },
-    { name: 'Hambantota Energy Port Hub (Sri Lanka)', lat: 6.1248, lng: 81.1185, baseCount: 25, type: 'Industrial / Operational', maxFrp: 110 },
-    { name: 'Sinharaja Tropical Reserve Corridor (Sri Lanka)', lat: 6.4000, lng: 80.4500, baseCount: 50, type: 'Wildfire / Vegetation', maxFrp: 65 },
-    { name: 'Central Highlands Forest (Nuwara Eliya / Sri Lanka)', lat: 7.0000, lng: 80.7500, baseCount: 45, type: 'Wildfire / Vegetation', maxFrp: 58 },
-
-    { name: 'Kashmir Pir Panjal Sector', lat: 33.80, lng: 74.90, baseCount: 60, type: 'Wildfire / Vegetation', maxFrp: 55 },
-    { name: 'Punjab Agri/Biomass Fire Sector', lat: 30.90, lng: 75.40, baseCount: 210, type: 'Wildfire / Vegetation', maxFrp: 70 },
-    { name: 'Central India Forest Belt (MP/CG)', lat: 22.10, lng: 80.50, baseCount: 240, type: 'Wildfire / Vegetation', maxFrp: 75 },
-    { name: 'Western Ghats Corridor (Goa/Karnataka)', lat: 14.80, lng: 75.30, baseCount: 160, type: 'Wildfire / Vegetation', maxFrp: 60 },
-    { name: 'Southern Western Ghats (Anamalai/Kerala)', lat: 10.30, lng: 76.90, baseCount: 90, type: 'Wildfire / Vegetation', maxFrp: 62 },
-    { name: 'Northeast Reserve Zone (Assam/Meghalaya)', lat: 26.60, lng: 93.20, baseCount: 180, type: 'Wildfire / Vegetation', maxFrp: 80 }
+  // Key Strategic Energy Nodes (Precise Industrial Clusters)
+  const industrialNodes = [
+    { name: 'Reliance Jamnagar Complex', lat: 22.4707, lng: 70.0577, count: 55, maxFrp: 210 },
+    { name: 'IOCL Paradip Petrochemical Hub', lat: 20.3164, lng: 86.6114, count: 48, maxFrp: 180 },
+    { name: 'NTPC Singrauli Thermal Belt', lat: 24.1997, lng: 82.6644, count: 65, maxFrp: 230 },
+    { name: 'Nagothane Chemical Cluster', lat: 18.5312, lng: 73.1311, count: 35, maxFrp: 140 },
+    { name: 'Visakhapatnam Heavy Industry Zone', lat: 17.6868, lng: 83.2185, count: 42, maxFrp: 155 },
+    { name: 'Hazira LNG Energy Complex', lat: 21.1523, lng: 72.8258, count: 50, maxFrp: 175 },
+    { name: 'Chennai Manali Petrochemical Zone', lat: 13.1600, lng: 80.2600, count: 32, maxFrp: 135 },
+    { name: 'BPCL Kochi Refinery Complex', lat: 9.9900, lng: 76.3600, count: 28, maxFrp: 125 },
+    { name: 'Barauni Petrochemical & Thermal Zone', lat: 25.4700, lng: 85.9600, count: 30, maxFrp: 130 },
+    { name: 'Panipat Refinery & Petrochemical Belt', lat: 29.3900, lng: 76.9600, count: 38, maxFrp: 150 },
+    { name: 'Sapugaskanda Refinery Complex (Sri Lanka)', lat: 6.9654, lng: 79.9328, count: 36, maxFrp: 155 },
+    { name: 'Norochcholai Power Complex (Sri Lanka)', lat: 8.0167, lng: 79.7214, count: 30, maxFrp: 165 },
+    { name: 'Hambantota Energy Port (Sri Lanka)', lat: 6.1248, lng: 81.1185, count: 24, maxFrp: 120 }
   ];
 
-  return zones.flatMap((zone) => {
-    const count = zone.baseCount + Math.floor((Math.random() - 0.5) * 8);
-    const isInd = zone.type === 'Industrial / Operational';
-    const spread = isInd ? 0.35 : 1.8;
-    
-    return Array.from({ length: Math.max(10, count) }).map((_, i) => {
-      const frp = Math.round(isInd ? Math.random() * (zone.maxFrp - 40) + 40 : Math.random() * (zone.maxFrp - 10) + 10);
-      const threat = frp > 110 ? 'CRITICAL' : frp > 50 ? 'HIGH' : 'NORMAL';
-      const mOffset = Math.floor(Math.random() * 50);
-      const hOffset = Math.floor(Math.random() * 5);
-      return {
-        latitude: +(zone.lat + (Math.random() - 0.5) * spread).toFixed(4),
-        longitude: +(zone.lng + (Math.random() - 0.5) * spread).toFixed(4),
+  industrialNodes.forEach((node) => {
+    for (let i = 0; i < node.count; i++) {
+      const frp = Math.round(Math.random() * (node.maxFrp - 45) + 45);
+      const isCrit = frp > 110;
+      points.push({
+        latitude: +(node.lat + (Math.random() - 0.5) * 0.35).toFixed(4),
+        longitude: +(node.lng + (Math.random() - 0.5) * 0.35).toFixed(4),
         frp: frp,
-        brightness: Math.round(Math.random() * 60 + 315),
+        brightness: Math.round(Math.random() * 50 + 330),
         satellite: i % 2 === 0 ? 'VIIRS_NOAA20_NRT' : 'MODIS_NRT',
-        classification: zone.type,
-        nearest_facility: isInd ? zone.name : 'None (Wildfire / Open Area)',
-        distance_to_facility_km: isInd ? +(Math.random() * 3.8 + 0.2).toFixed(2) : +(Math.random() * 65 + 15).toFixed(2),
+        classification: 'Industrial / Operational',
+        nearest_facility: node.name,
+        distance_to_facility_km: +(Math.random() * 3.6 + 0.2).toFixed(2),
         is_anomaly: frp > 85,
-        threat_level: threat,
-        confidence: Math.round(Math.random() * 15 + 85) + '%',
+        threat_level: isCrit ? 'CRITICAL' : frp > 60 ? 'HIGH' : 'NORMAL',
+        confidence: Math.round(Math.random() * 10 + 89) + '%',
         acq_date: dateStr,
-        acq_time: ${String((now.getUTCHours() - hOffset + 24) % 24).padStart(2, '0')}: UTC
-      };
-    });
+        acq_time: ${String(Math.floor(Math.random() * 24)).padStart(2, '0')}: UTC
+      });
+    }
   });
+
+  // Continuous Sub-Continent Geographic Swath (Smooth Natural Distribution without blocks)
+  // Covers: Kashmir -> Punjab -> Gangetic Plain -> MP/Central -> Deccan -> Western/Eastern Ghats -> Tamil Nadu -> Sri Lanka
+  const regionalZones = [
+    { name: 'Northern Kashmir & Himalayan Sector', latMin: 32.5, latMax: 35.0, lngMin: 74.0, lngMax: 77.5, count: 80 },
+    { name: 'Punjab & Haryana Agricultural Corridor', latMin: 29.0, latMax: 32.0, lngMin: 74.5, lngMax: 77.0, count: 170 },
+    { name: 'Uttar Pradesh & Bihar Gangetic Basin', latMin: 24.5, latMax: 28.5, lngMin: 78.0, lngMax: 86.5, count: 230 },
+    { name: 'Rajasthan & Gujarat Semi-Arid Belt', latMin: 23.0, latMax: 28.0, lngMin: 69.5, lngMax: 76.0, count: 120 },
+    { name: 'Central India & MP Forest Reserve Belt', latMin: 21.0, latMax: 24.5, lngMin: 76.5, lngMax: 83.5, count: 220 },
+    { name: 'Eastern Mineral & Forest Zone (Odisha/Jharkhand)', latMin: 19.5, latMax: 23.5, lngMin: 83.5, lngMax: 87.5, count: 160 },
+    { name: 'Northeast Brahmaputra & Hills (Assam)', latMin: 24.5, latMax: 27.5, lngMin: 90.0, lngMax: 94.5, count: 140 },
+    { name: 'Maharashtra & Deccan Plateau', latMin: 16.5, latMax: 20.8, lngMin: 73.5, lngMax: 79.5, count: 150 },
+    { name: 'Karnataka & Western Ghats Reserve', latMin: 12.5, latMax: 16.5, lngMin: 74.2, lngMax: 77.8, count: 110 },
+    { name: 'Andhra & Telangana Thermal/Agri Corridor', latMin: 14.0, latMax: 18.5, lngMin: 77.8, lngMax: 82.5, count: 120 },
+    { name: 'Tamil Nadu & Southern Coastal Plains', latMin: 8.5, latMax: 13.0, lngMin: 77.0, lngMax: 80.2, count: 100 },
+    { name: 'Kerala & Anamalai Forest Corridor', latMin: 8.5, latMax: 12.0, lngMin: 75.8, lngMax: 77.2, count: 70 },
+    // Full Sri Lanka Coverage (North to South of Island)
+    { name: 'Northern Jaffna & Kilinochchi (Sri Lanka)', latMin: 9.1, latMax: 9.8, lngMin: 79.9, lngMax: 80.6, count: 35 },
+    { name: 'Central Highlands & Kandy Forests (Sri Lanka)', latMin: 6.8, latMax: 8.5, lngMin: 80.2, lngMax: 81.2, count: 65 },
+    { name: 'Southern Sinharaja & Galle-Hambantota (Sri Lanka)', latMin: 5.9, latMax: 6.8, lngMin: 80.1, lngMax: 81.5, count: 50 }
+  ];
+
+  regionalZones.forEach((rz) => {
+    for (let i = 0; i < rz.count; i++) {
+      const frp = Math.round(Math.random() * 65 + 10);
+      const isCrit = frp > 60;
+      points.push({
+        latitude: +(rz.latMin + Math.random() * (rz.latMax - rz.latMin)).toFixed(4),
+        longitude: +(rz.lngMin + Math.random() * (rz.lngMax - rz.lngMin)).toFixed(4),
+        frp: frp,
+        brightness: Math.round(Math.random() * 35 + 305),
+        satellite: i % 2 === 0 ? 'VIIRS_NOAA20_NRT' : 'MODIS_NRT',
+        classification: 'Wildfire / Vegetation',
+        nearest_facility: 'None (Wildfire / Rural Area)',
+        distance_to_facility_km: +(Math.random() * 55 + 12).toFixed(2),
+        is_anomaly: isCrit,
+        threat_level: isCrit ? 'HIGH' : 'NORMAL',
+        confidence: Math.round(Math.random() * 15 + 82) + '%',
+        acq_date: dateStr,
+        acq_time: ${String(Math.floor(Math.random() * 24)).padStart(2, '0')}: UTC
+      });
+    }
+  });
+
+  return points;
 };
 
 function MapController({ flyTarget }) {
@@ -121,9 +152,9 @@ export default function App() {
   const [pulse, setPulse] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [flyTarget, setFlyTarget] = useState({ lat: 19.5, lng: 79.5, zoom: 5 });
+  const [flyTarget, setFlyTarget] = useState({ lat: 20.0, lng: 79.0, zoom: 5 });
   const [apiStatus, setApiStatus] = useState('CONNECTED');
-  const [latency, setLatency] = useState(18);
+  const [latency, setLatency] = useState(16);
 
   const fetchLiveData = () => {
     const start = performance.now();
@@ -141,7 +172,7 @@ export default function App() {
         }
       })
       .catch(() => {
-        setLatency(15);
+        setLatency(14);
         setData(GENERATE_DYNAMIC_TELEMETRY());
         setApiStatus('ACTIVE BUFFER');
       });
@@ -205,7 +236,7 @@ export default function App() {
               INDUSTRIAL FIRE &amp; ANOMALY GIS
             </div>
             <div style={{ fontSize: 10, color: '#38bdf8', fontFamily: 'monospace' }}>
-              MISSION CONTROL • REALTIME TELEMETRY
+              PAN-SOUTH ASIA CONTINUOUS RADAR TELEMETRY
             </div>
           </div>
           <span style={{ fontSize: 9, fontWeight: 800, background: 'rgba(6,182,212,0.25)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.5)', padding: '2px 6px', borderRadius: 4 }}>
@@ -242,7 +273,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Left Mission Control Panel */}
+      {/* Left Control Panel */}
       <aside style={{
         position: 'absolute', top: 76, left: 12, zIndex: 1200, width: 300,
         background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(14px)',
@@ -262,7 +293,7 @@ export default function App() {
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
               onFocus={() => setShowSuggestions(true)}
-              placeholder='Search Colombo, Kashmir, Jamnagar...'
+              placeholder='Search Colombo, Jaffna, UP, Jamnagar...'
               style={{ width: '100%', background: 'transparent', border: 'none', color: '#f8fafc', fontSize: 11, padding: '5px 0', outline: 'none' }}
             />
             {searchQuery && (
@@ -434,7 +465,7 @@ export default function App() {
       {/* Full Pan-Region Leaflet Map */}
       <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1 }}>
         <MapContainer
-          center={[19.5, 79.5]}
+          center={[20.0, 79.0]}
           zoom={5}
           zoomControl={false}
           style={{ width: '100%', height: '100%' }}
@@ -464,12 +495,12 @@ export default function App() {
               <CircleMarker
                 key={item.latitude + '-' + item.longitude + '-' + idx}
                 center={[item.latitude, item.longitude]}
-                radius={item.is_anomaly ? 7 : 4}
+                radius={item.is_anomaly ? 6 : 3.5}
                 pathOptions={{
                   color: color,
                   fillColor: color,
-                  fillOpacity: pulse ? 0.9 : 0.65,
-                  weight: item.is_anomaly ? 2 : 1
+                  fillOpacity: pulse ? 0.85 : 0.6,
+                  weight: item.is_anomaly ? 1.5 : 0.8
                 }}
                 eventHandlers={{
                   click: () => setSelectedSpot(item)
