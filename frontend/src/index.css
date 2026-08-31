@@ -12,9 +12,38 @@ html, body, #root {
   user-select: none;
 }
 
-/* Ensure Leaflet controls and canvas fit seamlessly */
 .leaflet-container {
   width: 100% !important;
   height: 100% !important;
   background: #020617 !important;
+}
+
+/* Reposition Leaflet Zoom Controls below header & visible */
+.leaflet-top.leaflet-left {
+  top: 68px !important;
+  left: auto !important;
+  right: 18px !important;
+}
+
+.leaflet-bar {
+  border: 1px solid #0284c7 !important;
+  border-radius: 6px !important;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.8) !important;
+}
+
+.leaflet-bar a {
+  background-color: #0f172a !important;
+  color: #38bdf8 !important;
+  border-bottom: 1px solid #334155 !important;
+  width: 34px !important;
+  height: 34px !important;
+  line-height: 34px !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
 }
