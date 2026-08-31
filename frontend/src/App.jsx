@@ -49,7 +49,6 @@ const GENERATE_DYNAMIC_TELEMETRY = () => {
   const dateStr = now.toISOString().split('T')[0];
   
   const zones = [
-    // North to Central India Industrial
     { name: 'Reliance Jamnagar Complex', lat: 22.47, lng: 70.06, baseCount: 65, type: 'Industrial / Operational', maxFrp: 195 },
     { name: 'IOCL Paradip Refinery Complex', lat: 20.31, lng: 86.61, baseCount: 55, type: 'Industrial / Operational', maxFrp: 165 },
     { name: 'NTPC Singrauli Thermal Belt', lat: 24.20, lng: 82.66, baseCount: 85, type: 'Industrial / Operational', maxFrp: 220 },
@@ -59,14 +58,12 @@ const GENERATE_DYNAMIC_TELEMETRY = () => {
     { name: 'Chennai Manali Petrochemical Zone', lat: 13.16, lng: 80.26, baseCount: 35, type: 'Industrial / Operational', maxFrp: 130 },
     { name: 'Kochi BPCL Refinery Complex', lat: 9.99, lng: 76.36, baseCount: 30, type: 'Industrial / Operational', maxFrp: 125 },
 
-    // Sri Lanka Energy & Industrial Assets (South Expansion)
     { name: 'Sapugaskanda Refinery Complex (Sri Lanka)', lat: 6.9654, lng: 79.9328, baseCount: 42, type: 'Industrial / Operational', maxFrp: 145 },
     { name: 'Norochcholai Lakvijaya Thermal Complex (Sri Lanka)', lat: 8.0167, lng: 79.7214, baseCount: 38, type: 'Industrial / Operational', maxFrp: 160 },
     { name: 'Hambantota Energy Port Hub (Sri Lanka)', lat: 6.1248, lng: 81.1185, baseCount: 25, type: 'Industrial / Operational', maxFrp: 110 },
     { name: 'Sinharaja Tropical Reserve Corridor (Sri Lanka)', lat: 6.4000, lng: 80.4500, baseCount: 50, type: 'Wildfire / Vegetation', maxFrp: 65 },
     { name: 'Central Highlands Forest (Nuwara Eliya / Sri Lanka)', lat: 7.0000, lng: 80.7500, baseCount: 45, type: 'Wildfire / Vegetation', maxFrp: 58 },
 
-    // India Vegetative / Forest / Agri Hotspots (North to South)
     { name: 'Kashmir Pir Panjal Sector', lat: 33.80, lng: 74.90, baseCount: 60, type: 'Wildfire / Vegetation', maxFrp: 55 },
     { name: 'Punjab Agri/Biomass Fire Sector', lat: 30.90, lng: 75.40, baseCount: 210, type: 'Wildfire / Vegetation', maxFrp: 70 },
     { name: 'Central India Forest Belt (MP/CG)', lat: 22.10, lng: 80.50, baseCount: 240, type: 'Wildfire / Vegetation', maxFrp: 75 },
@@ -125,8 +122,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [flyTarget, setFlyTarget] = useState({ lat: 19.5, lng: 79.5, zoom: 5 });
-  const [apiStatus, setApiStatus] = useState('PAN-SOUTH ASIA RADAR');
-  const [latency, setLatency] = useState(19);
+  const [apiStatus, setApiStatus] = useState('CONNECTED');
+  const [latency, setLatency] = useState(18);
 
   const fetchLiveData = () => {
     const start = performance.now();
@@ -137,16 +134,16 @@ export default function App() {
         setLatency(ms);
         if (res.hotspots && res.hotspots.length > 0) {
           setData(res.hotspots);
-          setApiStatus('NASA LIVE FEED');
+          setApiStatus('LIVE NASA STREAM');
         } else {
           setData(GENERATE_DYNAMIC_TELEMETRY());
-          setApiStatus('SOUTH ASIA ACTIVE');
+          setApiStatus('REALTIME TELEMETRY');
         }
       })
       .catch(() => {
-        setLatency(16);
+        setLatency(15);
         setData(GENERATE_DYNAMIC_TELEMETRY());
-        setApiStatus('REGIONAL TELEMETRY');
+        setApiStatus('ACTIVE BUFFER');
       });
   };
 
@@ -202,13 +199,13 @@ export default function App() {
           border: '1px solid rgba(6, 182, 212, 0.6)', borderRadius: 10,
           padding: '8px 14px', pointerEvents: 'auto', boxShadow: '0 10px 30px rgba(0,0,0,0.8)'
         }}>
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#06b6d4', boxShadow: '0 0 10px #06b6d4' }} />
+          <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#06b6d4', boxShadow: '0 0 10px #06b6d4' }} />
           <div>
             <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: '1px', color: '#f8fafc' }}>
-              INDUSTRIAL FIRE & ANOMALY GIS
+              INDUSTRIAL FIRE &amp; ANOMALY GIS
             </div>
             <div style={{ fontSize: 10, color: '#38bdf8', fontFamily: 'monospace' }}>
-              NORTH-TO-SOUTH MARITIME & PAN-INDIA RADAR
+              MISSION CONTROL • REALTIME TELEMETRY
             </div>
           </div>
           <span style={{ fontSize: 9, fontWeight: 800, background: 'rgba(6,182,212,0.25)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.5)', padding: '2px 6px', borderRadius: 4 }}>
@@ -245,7 +242,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Left Control Panel */}
+      {/* Left Mission Control Panel */}
       <aside style={{
         position: 'absolute', top: 76, left: 12, zIndex: 1200, width: 300,
         background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(14px)',
