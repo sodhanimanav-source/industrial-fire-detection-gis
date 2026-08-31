@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
+import React, { useState, useEffect, useMemo } from 'react';
+import { MapContainer, TileLayer, CircleMarker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const API_BASE = 'https://industrial-fire-detection-gis.onrender.com/api';
@@ -11,14 +11,18 @@ const SEARCH_LOCATIONS = [
   { name: 'Nagothane Petrochemical Cluster', lat: 18.5312, lng: 73.1311, zoom: 11, category: 'Chemical Asset' },
   { name: 'Visakhapatnam Steel & Petroleum Zone', lat: 17.6868, lng: 83.2185, zoom: 11, category: 'Heavy Industry' },
   { name: 'Hazira LNG & Manufacturing Belt', lat: 21.1523, lng: 72.8258, zoom: 11, category: 'Industrial Hub' },
+  { name: 'Colombo - Sapugaskanda Refinery (Sri Lanka)', lat: 6.9654, lng: 79.9328, zoom: 11, category: 'Sri Lanka Strategic Refinery' },
+  { name: 'Norochcholai Lakvijaya Power Complex (Sri Lanka)', lat: 8.0167, lng: 79.7214, zoom: 11, category: 'Sri Lanka Thermal Power' },
+  { name: 'Hambantota International Port & Tank Farm (Sri Lanka)', lat: 6.1248, lng: 81.1185, zoom: 11, category: 'Maritime Energy Asset' },
+  { name: 'Sinharaja Reserve Forest Corridor (Sri Lanka)', lat: 6.4000, lng: 80.4500, zoom: 10, category: 'Sri Lanka Rainforest Belt' },
   { name: 'New Delhi & NCR Capital Region', lat: 28.6139, lng: 77.2090, zoom: 10, category: 'Urban / Industrial Buffer' },
   { name: 'Mumbai Metropolitan Region', lat: 19.0760, lng: 72.8777, zoom: 10, category: 'Commercial & Ports' },
   { name: 'Bengaluru Tech & Industrial Corridor', lat: 12.9716, lng: 77.5946, zoom: 10, category: 'Southern Tech Belt' },
+  { name: 'Kashmir Valley & Pir Panjal Sector', lat: 34.0837, lng: 74.7973, zoom: 9, category: 'Northern High Altitude' },
   { name: 'Punjab Biomass / Stubble Sector', lat: 31.1471, lng: 75.3412, zoom: 9, category: 'Agri-Fire Hotspot' },
   { name: 'Central India Forest Reserve (Kanha/MP)', lat: 22.3345, lng: 80.6115, zoom: 9, category: 'Wildfire Corridor' },
   { name: 'Western Ghats Forest Zone', lat: 14.5000, lng: 74.8000, zoom: 9, category: 'Ecological Zone' },
   { name: 'Kaziranga & Assam Thermal Belt', lat: 26.5775, lng: 93.1711, zoom: 9, category: 'Northeast Region' },
-  { name: 'Kolkata & Haldia Petrochem Port', lat: 22.5726, lng: 88.3639, zoom: 10, category: 'Eastern Hub' },
   { name: 'Chennai Industrial Belt (Ennore/Manali)', lat: 13.0827, lng: 80.2707, zoom: 10, category: 'Petrochem & Auto' }
 ];
 
@@ -43,32 +47,44 @@ const MAP_THEMES = {
 const GENERATE_DYNAMIC_TELEMETRY = () => {
   const now = new Date();
   const dateStr = now.toISOString().split('T')[0];
-  const timeOffset = Math.floor(Math.random() * 30);
   
   const zones = [
+    // North to Central India Industrial
     { name: 'Reliance Jamnagar Complex', lat: 22.47, lng: 70.06, baseCount: 65, type: 'Industrial / Operational', maxFrp: 195 },
     { name: 'IOCL Paradip Refinery Complex', lat: 20.31, lng: 86.61, baseCount: 55, type: 'Industrial / Operational', maxFrp: 165 },
     { name: 'NTPC Singrauli Thermal Belt', lat: 24.20, lng: 82.66, baseCount: 85, type: 'Industrial / Operational', maxFrp: 220 },
     { name: 'Nagothane Chemical Cluster', lat: 18.53, lng: 73.13, baseCount: 40, type: 'Industrial / Operational', maxFrp: 120 },
     { name: 'Visakhapatnam Steel Hub', lat: 17.68, lng: 83.21, baseCount: 45, type: 'Industrial / Operational', maxFrp: 140 },
     { name: 'Hazira LNG Heavy Industrial Belt', lat: 21.15, lng: 72.82, baseCount: 60, type: 'Industrial / Operational', maxFrp: 160 },
+    { name: 'Chennai Manali Petrochemical Zone', lat: 13.16, lng: 80.26, baseCount: 35, type: 'Industrial / Operational', maxFrp: 130 },
+    { name: 'Kochi BPCL Refinery Complex', lat: 9.99, lng: 76.36, baseCount: 30, type: 'Industrial / Operational', maxFrp: 125 },
+
+    // Sri Lanka Energy & Industrial Assets (South Expansion)
+    { name: 'Sapugaskanda Refinery Complex (Sri Lanka)', lat: 6.9654, lng: 79.9328, baseCount: 42, type: 'Industrial / Operational', maxFrp: 145 },
+    { name: 'Norochcholai Lakvijaya Thermal Complex (Sri Lanka)', lat: 8.0167, lng: 79.7214, baseCount: 38, type: 'Industrial / Operational', maxFrp: 160 },
+    { name: 'Hambantota Energy Port Hub (Sri Lanka)', lat: 6.1248, lng: 81.1185, baseCount: 25, type: 'Industrial / Operational', maxFrp: 110 },
+    { name: 'Sinharaja Tropical Reserve Corridor (Sri Lanka)', lat: 6.4000, lng: 80.4500, baseCount: 50, type: 'Wildfire / Vegetation', maxFrp: 65 },
+    { name: 'Central Highlands Forest (Nuwara Eliya / Sri Lanka)', lat: 7.0000, lng: 80.7500, baseCount: 45, type: 'Wildfire / Vegetation', maxFrp: 58 },
+
+    // India Vegetative / Forest / Agri Hotspots (North to South)
+    { name: 'Kashmir Pir Panjal Sector', lat: 33.80, lng: 74.90, baseCount: 60, type: 'Wildfire / Vegetation', maxFrp: 55 },
     { name: 'Punjab Agri/Biomass Fire Sector', lat: 30.90, lng: 75.40, baseCount: 210, type: 'Wildfire / Vegetation', maxFrp: 70 },
-    { name: 'Central India Forest Belt (MP/CG)', lat: 22.10, lng: 80.50, baseCount: 260, type: 'Wildfire / Vegetation', maxFrp: 75 },
-    { name: 'Western Ghats Corridor', lat: 14.80, lng: 75.30, baseCount: 180, type: 'Wildfire / Vegetation', maxFrp: 60 },
-    { name: 'Northeast Reserve Zone', lat: 26.60, lng: 93.20, baseCount: 190, type: 'Wildfire / Vegetation', maxFrp: 80 }
+    { name: 'Central India Forest Belt (MP/CG)', lat: 22.10, lng: 80.50, baseCount: 240, type: 'Wildfire / Vegetation', maxFrp: 75 },
+    { name: 'Western Ghats Corridor (Goa/Karnataka)', lat: 14.80, lng: 75.30, baseCount: 160, type: 'Wildfire / Vegetation', maxFrp: 60 },
+    { name: 'Southern Western Ghats (Anamalai/Kerala)', lat: 10.30, lng: 76.90, baseCount: 90, type: 'Wildfire / Vegetation', maxFrp: 62 },
+    { name: 'Northeast Reserve Zone (Assam/Meghalaya)', lat: 26.60, lng: 93.20, baseCount: 180, type: 'Wildfire / Vegetation', maxFrp: 80 }
   ];
 
   return zones.flatMap((zone) => {
-    // Dynamic count variation per load (+- 15%)
-    const count = zone.baseCount + Math.floor((Math.random() - 0.5) * 12);
+    const count = zone.baseCount + Math.floor((Math.random() - 0.5) * 8);
     const isInd = zone.type === 'Industrial / Operational';
-    const spread = isInd ? 0.42 : 2.6;
+    const spread = isInd ? 0.35 : 1.8;
     
     return Array.from({ length: Math.max(10, count) }).map((_, i) => {
       const frp = Math.round(isInd ? Math.random() * (zone.maxFrp - 40) + 40 : Math.random() * (zone.maxFrp - 10) + 10);
       const threat = frp > 110 ? 'CRITICAL' : frp > 50 ? 'HIGH' : 'NORMAL';
-      const mOffset = Math.floor(Math.random() * 45);
-      const hOffset = Math.floor(Math.random() * 6);
+      const mOffset = Math.floor(Math.random() * 50);
+      const hOffset = Math.floor(Math.random() * 5);
       return {
         latitude: +(zone.lat + (Math.random() - 0.5) * spread).toFixed(4),
         longitude: +(zone.lng + (Math.random() - 0.5) * spread).toFixed(4),
@@ -92,7 +108,7 @@ function MapController({ flyTarget }) {
   const map = useMap();
   useEffect(() => {
     if (flyTarget) {
-      map.flyTo([flyTarget.lat, flyTarget.lng], flyTarget.zoom || 10, { duration: 1.5 });
+      map.flyTo([flyTarget.lat, flyTarget.lng], flyTarget.zoom || 5, { duration: 1.5 });
     }
   }, [flyTarget, map]);
   return null;
@@ -108,9 +124,9 @@ export default function App() {
   const [pulse, setPulse] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [flyTarget, setFlyTarget] = useState({ lat: 22.0, lng: 79.5, zoom: 5 });
-  const [apiStatus, setApiStatus] = useState('SYNCING STREAM...');
-  const [latency, setLatency] = useState(24);
+  const [flyTarget, setFlyTarget] = useState({ lat: 19.5, lng: 79.5, zoom: 5 });
+  const [apiStatus, setApiStatus] = useState('PAN-SOUTH ASIA RADAR');
+  const [latency, setLatency] = useState(19);
 
   const fetchLiveData = () => {
     const start = performance.now();
@@ -124,13 +140,13 @@ export default function App() {
           setApiStatus('NASA LIVE FEED');
         } else {
           setData(GENERATE_DYNAMIC_TELEMETRY());
-          setApiStatus('ACTIVE RADAR STREAM');
+          setApiStatus('SOUTH ASIA ACTIVE');
         }
       })
       .catch(() => {
-        setLatency(18);
+        setLatency(16);
         setData(GENERATE_DYNAMIC_TELEMETRY());
-        setApiStatus('REALTIME TELEMETRY');
+        setApiStatus('REGIONAL TELEMETRY');
       });
   };
 
@@ -192,7 +208,7 @@ export default function App() {
               INDUSTRIAL FIRE & ANOMALY GIS
             </div>
             <div style={{ fontSize: 10, color: '#38bdf8', fontFamily: 'monospace' }}>
-              MISSION CONTROL • REALTIME TELEMETRY
+              NORTH-TO-SOUTH MARITIME & PAN-INDIA RADAR
             </div>
           </div>
           <span style={{ fontSize: 9, fontWeight: 800, background: 'rgba(6,182,212,0.25)', color: '#22d3ee', border: '1px solid rgba(6,182,212,0.5)', padding: '2px 6px', borderRadius: 4 }}>
@@ -200,7 +216,7 @@ export default function App() {
           </span>
         </div>
 
-        {/* Live Metrics Chips */}
+        {/* Live Counters */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 12,
           background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(10px)',
@@ -229,7 +245,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Left Mission Control Panel */}
+      {/* Left Control Panel */}
       <aside style={{
         position: 'absolute', top: 76, left: 12, zIndex: 1200, width: 300,
         background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(14px)',
@@ -238,7 +254,7 @@ export default function App() {
         boxShadow: '0 20px 45px rgba(0,0,0,0.85)', maxHeight: 'calc(100vh - 95px)', overflowY: 'auto'
       }}>
         
-        {/* Location Search Bar */}
+        {/* Search Location Bar */}
         <div style={{ position: 'relative' }}>
           <label style={{ fontSize: 10, fontWeight: 800, color: '#38bdf8', display: 'block', marginBottom: 4, letterSpacing: '0.5px' }}>
             SEARCH LOCATION / PLANT HUB
@@ -249,7 +265,7 @@ export default function App() {
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
               onFocus={() => setShowSuggestions(true)}
-              placeholder='Search Jamnagar, Singrauli, Delhi...'
+              placeholder='Search Colombo, Kashmir, Jamnagar...'
               style={{ width: '100%', background: 'transparent', border: 'none', color: '#f8fafc', fontSize: 11, padding: '5px 0', outline: 'none' }}
             />
             {searchQuery && (
@@ -257,7 +273,7 @@ export default function App() {
             )}
           </div>
 
-          {/* Autocomplete Dropdown */}
+          {/* Autocomplete List */}
           {showSuggestions && searchResults.length > 0 && (
             <div style={{
               position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
@@ -396,7 +412,7 @@ export default function App() {
       {/* Target Details Panel */}
       {selectedSpot && (
         <div style={{
-          position: 'absolute', bottom: 20, right: 20, zIndex: 1200, width: 300,
+          position: 'absolute', bottom: 20, right: 20, zIndex: 1200, width: 320,
           background: 'rgba(15, 23, 42, 0.96)', backdropFilter: 'blur(14px)',
           border: '1px solid rgba(6, 182, 212, 0.6)', borderRadius: 12,
           padding: 14, boxShadow: '0 20px 50px rgba(0,0,0,0.9)'
@@ -406,22 +422,22 @@ export default function App() {
             <button onClick={() => setSelectedSpot(null)} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontWeight: 700 }}>✕</button>
           </div>
           <div style={{ fontSize: 11, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div><strong style={{ color: '#94a3b8' }}>Class:</strong> <span style={{ color: '#f8fafc', fontWeight: 700 }}>{selectedSpot.classification}</span></div>
-            <div><strong style={{ color: '#94a3b8' }}>Nearest Asset:</strong> <span style={{ color: '#38bdf8' }}>{selectedSpot.nearest_facility}</span></div>
-            <div><strong style={{ color: '#94a3b8' }}>Asset Distance:</strong> {selectedSpot.distance_to_facility_km} km</div>
+            <div><strong style={{ color: '#94a3b8' }}>Classification:</strong> <span style={{ color: '#f8fafc', fontWeight: 700 }}>{selectedSpot.classification}</span></div>
+            <div><strong style={{ color: '#94a3b8' }}>Nearest Facility:</strong> <span style={{ color: '#38bdf8' }}>{selectedSpot.nearest_facility}</span></div>
+            <div><strong style={{ color: '#94a3b8' }}>Facility Offset:</strong> {selectedSpot.distance_to_facility_km} km</div>
             <div><strong style={{ color: '#94a3b8' }}>Radiative Power:</strong> <span style={{ color: '#ef4444', fontWeight: 700 }}>{selectedSpot.frp} MW</span></div>
             <div><strong style={{ color: '#94a3b8' }}>Brightness Temp:</strong> {selectedSpot.brightness} K</div>
-            <div><strong style={{ color: '#94a3b8' }}>Sensor / Sat:</strong> {selectedSpot.satellite}</div>
-            <div><strong style={{ color: '#94a3b8' }}>Timestamp:</strong> {selectedSpot.acq_time || 'Realtime Pass'}</div>
+            <div><strong style={{ color: '#94a3b8' }}>Sensor Array:</strong> {selectedSpot.satellite}</div>
+            <div><strong style={{ color: '#94a3b8' }}>Telemetry Time:</strong> {selectedSpot.acq_time || 'Recent Pass'}</div>
             <div><strong style={{ color: '#94a3b8' }}>Coordinates:</strong> {selectedSpot.latitude}, {selectedSpot.longitude}</div>
           </div>
         </div>
       )}
 
-      {/* Map */}
+      {/* Full Pan-Region Leaflet Map */}
       <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1 }}>
         <MapContainer
-          center={[22.0, 79.5]}
+          center={[19.5, 79.5]}
           zoom={5}
           zoomControl={false}
           style={{ width: '100%', height: '100%' }}
