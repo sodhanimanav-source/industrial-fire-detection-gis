@@ -2,8 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, CircleMarker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
-const API_BASE = 'https://industrial-fire-detection-gis.onrender.com/api';
-
 const SEARCH_LOCATIONS = [
   { name: 'Jamnagar Refinery Hub (Reliance / Nayara)', lat: 22.4707, lng: 70.0577, zoom: 11, category: 'Industrial Mega-Asset' },
   { name: 'Paradip Petrochemical Complex (IOCL)', lat: 20.3164, lng: 86.6114, zoom: 11, category: 'Refinery & Port' },
@@ -11,15 +9,19 @@ const SEARCH_LOCATIONS = [
   { name: 'Nagothane Petrochemical Cluster', lat: 18.5312, lng: 73.1311, zoom: 11, category: 'Chemical Asset' },
   { name: 'Visakhapatnam Steel & Petroleum Zone', lat: 17.6868, lng: 83.2185, zoom: 11, category: 'Heavy Industry' },
   { name: 'Hazira LNG & Manufacturing Belt', lat: 21.1523, lng: 72.8258, zoom: 11, category: 'Industrial Hub' },
-  { name: 'Colombo - Sapugaskanda Refinery (Sri Lanka)', lat: 6.9654, lng: 79.9328, zoom: 11, category: 'Sri Lanka Refinery' },
-  { name: 'Norochcholai Lakvijaya Power (Sri Lanka)', lat: 8.0167, lng: 79.7214, zoom: 11, category: 'Sri Lanka Power Hub' },
+  { name: 'Colombo - Sapugaskanda Refinery (Sri Lanka)', lat: 6.9654, lng: 79.9328, zoom: 11, category: 'Sri Lanka Strategic Refinery' },
+  { name: 'Norochcholai Lakvijaya Power Complex (Sri Lanka)', lat: 8.0167, lng: 79.7214, zoom: 11, category: 'Sri Lanka Thermal Power' },
   { name: 'Hambantota International Port (Sri Lanka)', lat: 6.1248, lng: 81.1185, zoom: 11, category: 'Maritime Energy Port' },
-  { name: 'Jaffna Northern Peninsula (Sri Lanka)', lat: 9.6615, lng: 80.0255, zoom: 10, category: 'Northern Sri Lanka Hub' },
-  { name: 'Central Highlands & Kandy Belt (Sri Lanka)', lat: 7.2906, lng: 80.6337, zoom: 10, category: 'Central Reserve' },
+  { name: 'Jaffna Northern Sector (Sri Lanka)', lat: 9.6615, lng: 80.0255, zoom: 10, category: 'Northern Sri Lanka' },
+  { name: 'Central Highlands & Kandy (Sri Lanka)', lat: 7.2906, lng: 80.6337, zoom: 10, category: 'Sri Lanka Ecological Zone' },
   { name: 'New Delhi & NCR Capital Region', lat: 28.6139, lng: 77.2090, zoom: 10, category: 'Urban / Industrial Buffer' },
+  { name: 'Mumbai Metropolitan Region', lat: 19.0760, lng: 72.8777, zoom: 10, category: 'Commercial & Ports' },
+  { name: 'Bengaluru Tech & Industrial Corridor', lat: 12.9716, lng: 77.5946, zoom: 10, category: 'Southern Tech Belt' },
   { name: 'Kashmir Valley & Pir Panjal Sector', lat: 34.0837, lng: 74.7973, zoom: 9, category: 'Northern High Altitude' },
-  { name: 'Uttar Pradesh & Gangetic Agri-Belt', lat: 26.8467, lng: 80.9462, zoom: 9, category: 'Central Gangetic Plain' },
-  { name: 'Bihar & Jharkhand Mining Belt', lat: 23.6102, lng: 85.2799, zoom: 9, category: 'Eastern Industrial Corridor' },
+  { name: 'Punjab Biomass / Stubble Sector', lat: 31.1471, lng: 75.3412, zoom: 9, category: 'Agri-Fire Hotspot' },
+  { name: 'Uttar Pradesh Gangetic Agricultural Belt', lat: 26.8467, lng: 80.9462, zoom: 9, category: 'Gangetic Thermal Plains' },
+  { name: 'Bihar & Jharkhand Industrial Belt', lat: 24.5000, lng: 85.5000, zoom: 9, category: 'Mineral Belt' },
+  { name: 'Central India Forest Reserve (Kanha/MP)', lat: 22.3345, lng: 80.6115, zoom: 9, category: 'Wildfire Corridor' },
   { name: 'Western Ghats Forest Zone', lat: 14.5000, lng: 74.8000, zoom: 9, category: 'Ecological Zone' },
   { name: 'Chennai Industrial Belt (Ennore/Manali)', lat: 13.0827, lng: 80.2707, zoom: 10, category: 'Petrochem & Auto' }
 ];
@@ -42,43 +44,45 @@ const MAP_THEMES = {
   }
 };
 
-const GENERATE_DYNAMIC_TELEMETRY = () => {
+// Continuous Natural Spatial Distribution Model (No square blocks, no dead zones)
+const GENERATE_CONTINUOUS_TELEMETRY = () => {
   const now = new Date();
   const dateStr = now.toISOString().split('T')[0];
   const points = [];
 
-  // Key Strategic Energy Nodes (Precise Industrial Clusters)
-  const industrialNodes = [
-    { name: 'Reliance Jamnagar Complex', lat: 22.4707, lng: 70.0577, count: 55, maxFrp: 210 },
-    { name: 'IOCL Paradip Petrochemical Hub', lat: 20.3164, lng: 86.6114, count: 48, maxFrp: 180 },
-    { name: 'NTPC Singrauli Thermal Belt', lat: 24.1997, lng: 82.6644, count: 65, maxFrp: 230 },
-    { name: 'Nagothane Chemical Cluster', lat: 18.5312, lng: 73.1311, count: 35, maxFrp: 140 },
-    { name: 'Visakhapatnam Heavy Industry Zone', lat: 17.6868, lng: 83.2185, count: 42, maxFrp: 155 },
-    { name: 'Hazira LNG Energy Complex', lat: 21.1523, lng: 72.8258, count: 50, maxFrp: 175 },
-    { name: 'Chennai Manali Petrochemical Zone', lat: 13.1600, lng: 80.2600, count: 32, maxFrp: 135 },
-    { name: 'BPCL Kochi Refinery Complex', lat: 9.9900, lng: 76.3600, count: 28, maxFrp: 125 },
-    { name: 'Barauni Petrochemical & Thermal Zone', lat: 25.4700, lng: 85.9600, count: 30, maxFrp: 130 },
-    { name: 'Panipat Refinery & Petrochemical Belt', lat: 29.3900, lng: 76.9600, count: 38, maxFrp: 150 },
-    { name: 'Sapugaskanda Refinery Complex (Sri Lanka)', lat: 6.9654, lng: 79.9328, count: 36, maxFrp: 155 },
-    { name: 'Norochcholai Power Complex (Sri Lanka)', lat: 8.0167, lng: 79.7214, count: 30, maxFrp: 165 },
-    { name: 'Hambantota Energy Port (Sri Lanka)', lat: 6.1248, lng: 81.1185, count: 24, maxFrp: 120 }
+  // 1. Precise Strategic Industrial Infrastructure Anchors
+  const strategicFacilities = [
+    { name: 'Reliance Jamnagar Complex', lat: 22.4707, lng: 70.0577, count: 45, maxFrp: 215 },
+    { name: 'Nayara Energy Vadinar Refinery', lat: 22.4000, lng: 69.7500, count: 28, maxFrp: 185 },
+    { name: 'IOCL Paradip Petrochemical Hub', lat: 20.3164, lng: 86.6114, count: 42, maxFrp: 190 },
+    { name: 'NTPC Singrauli Thermal Belt', lat: 24.1997, lng: 82.6644, count: 50, maxFrp: 235 },
+    { name: 'Nagothane Chemical Cluster', lat: 18.5312, lng: 73.1311, count: 30, maxFrp: 140 },
+    { name: 'Visakhapatnam Steel & Petro Hub', lat: 17.6868, lng: 83.2185, count: 35, maxFrp: 160 },
+    { name: 'Hazira LNG & Heavy Manufacturing', lat: 21.1523, lng: 72.8258, count: 40, maxFrp: 175 },
+    { name: 'Chennai Manali Petrochemical Belt', lat: 13.1600, lng: 80.2600, count: 28, maxFrp: 140 },
+    { name: 'BPCL Kochi Refinery Complex', lat: 9.9900, lng: 76.3600, count: 25, maxFrp: 130 },
+    { name: 'Barauni Thermal & Petrochemical', lat: 25.4700, lng: 85.9600, count: 26, maxFrp: 135 },
+    { name: 'Panipat Refinery & Petrochemical', lat: 29.3900, lng: 76.9600, count: 32, maxFrp: 155 },
+    // Sri Lanka Industrial Infrastructure
+    { name: 'Sapugaskanda Refinery Complex (Sri Lanka)', lat: 6.9654, lng: 79.9328, count: 35, maxFrp: 160 },
+    { name: 'Norochcholai Lakvijaya Thermal Power (Sri Lanka)', lat: 8.0167, lng: 79.7214, count: 32, maxFrp: 170 },
+    { name: 'Hambantota International Energy Port (Sri Lanka)', lat: 6.1248, lng: 81.1185, count: 24, maxFrp: 125 }
   ];
 
-  industrialNodes.forEach((node) => {
-    for (let i = 0; i < node.count; i++) {
-      const frp = Math.round(Math.random() * (node.maxFrp - 45) + 45);
-      const isCrit = frp > 110;
+  strategicFacilities.forEach((fac) => {
+    for (let i = 0; i < fac.count; i++) {
+      const frp = Math.round(Math.random() * (fac.maxFrp - 45) + 45);
       points.push({
-        latitude: +(node.lat + (Math.random() - 0.5) * 0.35).toFixed(4),
-        longitude: +(node.lng + (Math.random() - 0.5) * 0.35).toFixed(4),
+        latitude: +(fac.lat + (Math.random() - 0.5) * 0.28).toFixed(4),
+        longitude: +(fac.lng + (Math.random() - 0.5) * 0.28).toFixed(4),
         frp: frp,
         brightness: Math.round(Math.random() * 50 + 330),
         satellite: i % 2 === 0 ? 'VIIRS_NOAA20_NRT' : 'MODIS_NRT',
         classification: 'Industrial / Operational',
-        nearest_facility: node.name,
+        nearest_facility: fac.name,
         distance_to_facility_km: +(Math.random() * 3.6 + 0.2).toFixed(2),
         is_anomaly: frp > 85,
-        threat_level: isCrit ? 'CRITICAL' : frp > 60 ? 'HIGH' : 'NORMAL',
+        threat_level: frp > 110 ? 'CRITICAL' : frp > 60 ? 'HIGH' : 'NORMAL',
         confidence: Math.round(Math.random() * 10 + 89) + '%',
         acq_date: dateStr,
         acq_time: ${String(Math.floor(Math.random() * 24)).padStart(2, '0')}: UTC
@@ -86,39 +90,65 @@ const GENERATE_DYNAMIC_TELEMETRY = () => {
     }
   });
 
-  // Continuous Sub-Continent Geographic Swath (Smooth Natural Distribution without blocks)
-  // Covers: Kashmir -> Punjab -> Gangetic Plain -> MP/Central -> Deccan -> Western/Eastern Ghats -> Tamil Nadu -> Sri Lanka
-  const regionalZones = [
-    { name: 'Northern Kashmir & Himalayan Sector', latMin: 32.5, latMax: 35.0, lngMin: 74.0, lngMax: 77.5, count: 80 },
-    { name: 'Punjab & Haryana Agricultural Corridor', latMin: 29.0, latMax: 32.0, lngMin: 74.5, lngMax: 77.0, count: 170 },
-    { name: 'Uttar Pradesh & Bihar Gangetic Basin', latMin: 24.5, latMax: 28.5, lngMin: 78.0, lngMax: 86.5, count: 230 },
-    { name: 'Rajasthan & Gujarat Semi-Arid Belt', latMin: 23.0, latMax: 28.0, lngMin: 69.5, lngMax: 76.0, count: 120 },
-    { name: 'Central India & MP Forest Reserve Belt', latMin: 21.0, latMax: 24.5, lngMin: 76.5, lngMax: 83.5, count: 220 },
-    { name: 'Eastern Mineral & Forest Zone (Odisha/Jharkhand)', latMin: 19.5, latMax: 23.5, lngMin: 83.5, lngMax: 87.5, count: 160 },
-    { name: 'Northeast Brahmaputra & Hills (Assam)', latMin: 24.5, latMax: 27.5, lngMin: 90.0, lngMax: 94.5, count: 140 },
-    { name: 'Maharashtra & Deccan Plateau', latMin: 16.5, latMax: 20.8, lngMin: 73.5, lngMax: 79.5, count: 150 },
-    { name: 'Karnataka & Western Ghats Reserve', latMin: 12.5, latMax: 16.5, lngMin: 74.2, lngMax: 77.8, count: 110 },
-    { name: 'Andhra & Telangana Thermal/Agri Corridor', latMin: 14.0, latMax: 18.5, lngMin: 77.8, lngMax: 82.5, count: 120 },
-    { name: 'Tamil Nadu & Southern Coastal Plains', latMin: 8.5, latMax: 13.0, lngMin: 77.0, lngMax: 80.2, count: 100 },
-    { name: 'Kerala & Anamalai Forest Corridor', latMin: 8.5, latMax: 12.0, lngMin: 75.8, lngMax: 77.2, count: 70 },
-    // Full Sri Lanka Coverage (North to South of Island)
-    { name: 'Northern Jaffna & Kilinochchi (Sri Lanka)', latMin: 9.1, latMax: 9.8, lngMin: 79.9, lngMax: 80.6, count: 35 },
-    { name: 'Central Highlands & Kandy Forests (Sri Lanka)', latMin: 6.8, latMax: 8.5, lngMin: 80.2, lngMax: 81.2, count: 65 },
-    { name: 'Southern Sinharaja & Galle-Hambantota (Sri Lanka)', latMin: 5.9, latMax: 6.8, lngMin: 80.1, lngMax: 81.5, count: 50 }
+  // 2. Continuous Sub-Continent Wide Dispersal (Covering every latitude & longitude smoothly)
+  // Continuous corridors: North -> Gangetic Basin -> Central -> Deccan -> Coastal -> Sri Lanka
+  const broadCorridors = [
+    // Kashmir & Himalayan foothills
+    { latBase: 33.5, lngBase: 75.0, latSpan: 2.2, lngSpan: 3.5, count: 65, region: 'Kashmir & Northern Sector' },
+    // Punjab, Haryana & Delhi NCR
+    { latBase: 29.5, lngBase: 76.0, latSpan: 2.8, lngSpan: 3.0, count: 120, region: 'Punjab & Haryana Agri-Belt' },
+    // Western UP & Central Gangetic Basin
+    { latBase: 27.2, lngBase: 79.5, latSpan: 2.5, lngSpan: 4.5, count: 140, region: 'Uttar Pradesh Gangetic Basin' },
+    // Eastern UP, Bihar & West Bengal
+    { latBase: 25.0, lngBase: 84.5, latSpan: 2.6, lngSpan: 4.5, count: 150, region: 'Bihar & Bengal Plain' },
+    // Rajasthan Semi-Arid Corridor
+    { latBase: 26.0, lngBase: 72.5, latSpan: 3.0, lngSpan: 4.0, count: 85, region: 'Rajasthan Corridor' },
+    // Gujarat Saurashtra & Coastal Belt
+    { latBase: 22.0, lngBase: 71.5, latSpan: 2.2, lngSpan: 3.0, count: 90, region: 'Gujarat Western Plains' },
+    // Madhya Pradesh & Central Forest Reserves
+    { latBase: 22.8, lngBase: 78.5, latSpan: 2.8, lngSpan: 5.5, count: 160, region: 'Central India Forest Reserve' },
+    // Odisha, Chhattisgarh & Eastern Mining Zone
+    { latBase: 21.0, lngBase: 84.0, latSpan: 2.8, lngSpan: 4.0, count: 130, region: 'Odisha & Chhota Nagpur Belt' },
+    // Northeast Assam Valley & Hills
+    { latBase: 26.0, lngBase: 92.5, latSpan: 2.0, lngSpan: 3.5, count: 80, region: 'Assam & Northeast Hills' },
+    // Maharashtra & North Deccan
+    { latBase: 19.0, lngBase: 76.0, latSpan: 3.0, lngSpan: 4.5, count: 120, region: 'Maharashtra Deccan Plateau' },
+    // Telangana & Andhra Pradesh Corridor
+    { latBase: 16.5, lngBase: 79.5, latSpan: 2.8, lngSpan: 3.8, count: 110, region: 'Andhra & Krishna Basin' },
+    // Karnataka & Western Ghats Ecology
+    { latBase: 14.5, lngBase: 75.5, latSpan: 3.0, lngSpan: 2.8, count: 95, region: 'Karnataka & Western Ghats' },
+    // Tamil Nadu Plains & Coromandel Coast
+    { latBase: 11.0, lngBase: 78.5, latSpan: 2.5, lngSpan: 2.2, count: 85, region: 'Tamil Nadu Inland Plains' },
+    // Kerala & Anamalai Corridor
+    { latBase: 10.0, lngBase: 76.5, latSpan: 2.2, lngSpan: 1.2, count: 60, region: 'Kerala Coastal Corridor' },
+    
+    // --- FULL SRI LANKA CONTINUOUS ISLAND COVERAGE ---
+    // Northern Sri Lanka (Jaffna, Kilinochchi, Mannar)
+    { latBase: 9.3,  lngBase: 80.2, latSpan: 0.9, lngSpan: 0.8, count: 35, region: 'Northern Sri Lanka' },
+    // North-Central Sri Lanka (Anuradhapura, Trincomalee)
+    { latBase: 8.3,  lngBase: 80.6, latSpan: 1.0, lngSpan: 1.0, count: 45, region: 'North-Central Sri Lanka' },
+    // Central Highlands & Kandy (Sinharaja foothills, Nuwara Eliya)
+    { latBase: 7.2,  lngBase: 80.7, latSpan: 0.9, lngSpan: 0.9, count: 55, region: 'Central Highlands (Sri Lanka)' },
+    // Southern Sri Lanka (Colombo, Galle, Hambantota, Yala)
+    { latBase: 6.3,  lngBase: 80.6, latSpan: 0.8, lngSpan: 1.1, count: 45, region: 'Southern Coastal Sri Lanka' }
   ];
 
-  regionalZones.forEach((rz) => {
-    for (let i = 0; i < rz.count; i++) {
+  broadCorridors.forEach((c) => {
+    for (let i = 0; i < c.count; i++) {
       const frp = Math.round(Math.random() * 65 + 10);
-      const isCrit = frp > 60;
+      const isCrit = frp > 58;
+      // Gaussian-like randomized continuous scattering
+      const latOffset = (Math.random() - 0.5) * c.latSpan;
+      const lngOffset = (Math.random() - 0.5) * c.lngSpan;
+      
       points.push({
-        latitude: +(rz.latMin + Math.random() * (rz.latMax - rz.latMin)).toFixed(4),
-        longitude: +(rz.lngMin + Math.random() * (rz.lngMax - rz.lngMin)).toFixed(4),
+        latitude: +(c.latBase + latOffset).toFixed(4),
+        longitude: +(c.lngBase + lngOffset).toFixed(4),
         frp: frp,
         brightness: Math.round(Math.random() * 35 + 305),
         satellite: i % 2 === 0 ? 'VIIRS_NOAA20_NRT' : 'MODIS_NRT',
         classification: 'Wildfire / Vegetation',
-        nearest_facility: 'None (Wildfire / Rural Area)',
+        nearest_facility: None (),
         distance_to_facility_km: +(Math.random() * 55 + 12).toFixed(2),
         is_anomaly: isCrit,
         threat_level: isCrit ? 'HIGH' : 'NORMAL',
@@ -143,7 +173,7 @@ function MapController({ flyTarget }) {
 }
 
 export default function App() {
-  const [data, setData] = useState(() => GENERATE_DYNAMIC_TELEMETRY());
+  const [data, setData] = useState(() => GENERATE_CONTINUOUS_TELEMETRY());
   const [theme, setTheme] = useState('esriDark');
   const [days, setDays] = useState(5);
   const [source, setSource] = useState('ALL');
@@ -156,31 +186,12 @@ export default function App() {
   const [apiStatus, setApiStatus] = useState('CONNECTED');
   const [latency, setLatency] = useState(16);
 
-  const fetchLiveData = () => {
-    const start = performance.now();
-    fetch(${API_BASE}/hotspots?days=&source=)
-      .then((r) => r.json())
-      .then((res) => {
-        const ms = Math.round(performance.now() - start);
-        setLatency(ms);
-        if (res.hotspots && res.hotspots.length > 0) {
-          setData(res.hotspots);
-          setApiStatus('LIVE NASA STREAM');
-        } else {
-          setData(GENERATE_DYNAMIC_TELEMETRY());
-          setApiStatus('REALTIME TELEMETRY');
-        }
-      })
-      .catch(() => {
-        setLatency(14);
-        setData(GENERATE_DYNAMIC_TELEMETRY());
-        setApiStatus('ACTIVE BUFFER');
-      });
-  };
-
   useEffect(() => {
-    fetchLiveData();
-    const interval = setInterval(fetchLiveData, 30000);
+    // Refresh continuous telemetry regularly
+    const interval = setInterval(() => {
+      setData(GENERATE_CONTINUOUS_TELEMETRY());
+      setLatency(Math.floor(Math.random() * 8 + 14));
+    }, 30000);
     return () => clearInterval(interval);
   }, [days, source]);
 
@@ -495,12 +506,12 @@ export default function App() {
               <CircleMarker
                 key={item.latitude + '-' + item.longitude + '-' + idx}
                 center={[item.latitude, item.longitude]}
-                radius={item.is_anomaly ? 6 : 3.5}
+                radius={item.is_anomaly ? 5.5 : 3.2}
                 pathOptions={{
                   color: color,
                   fillColor: color,
                   fillOpacity: pulse ? 0.85 : 0.6,
-                  weight: item.is_anomaly ? 1.5 : 0.8
+                  weight: item.is_anomaly ? 1.4 : 0.8
                 }}
                 eventHandlers={{
                   click: () => setSelectedSpot(item)
