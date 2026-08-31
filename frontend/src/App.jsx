@@ -44,13 +44,11 @@ const MAP_THEMES = {
   }
 };
 
-// Continuous Natural Spatial Distribution Model (No square blocks, no dead zones)
 const GENERATE_CONTINUOUS_TELEMETRY = () => {
   const now = new Date();
   const dateStr = now.toISOString().split('T')[0];
   const points = [];
 
-  // 1. Precise Strategic Industrial Infrastructure Anchors
   const strategicFacilities = [
     { name: 'Reliance Jamnagar Complex', lat: 22.4707, lng: 70.0577, count: 45, maxFrp: 215 },
     { name: 'Nayara Energy Vadinar Refinery', lat: 22.4000, lng: 69.7500, count: 28, maxFrp: 185 },
@@ -63,7 +61,6 @@ const GENERATE_CONTINUOUS_TELEMETRY = () => {
     { name: 'BPCL Kochi Refinery Complex', lat: 9.9900, lng: 76.3600, count: 25, maxFrp: 130 },
     { name: 'Barauni Thermal & Petrochemical', lat: 25.4700, lng: 85.9600, count: 26, maxFrp: 135 },
     { name: 'Panipat Refinery & Petrochemical', lat: 29.3900, lng: 76.9600, count: 32, maxFrp: 155 },
-    // Sri Lanka Industrial Infrastructure
     { name: 'Sapugaskanda Refinery Complex (Sri Lanka)', lat: 6.9654, lng: 79.9328, count: 35, maxFrp: 160 },
     { name: 'Norochcholai Lakvijaya Thermal Power (Sri Lanka)', lat: 8.0167, lng: 79.7214, count: 32, maxFrp: 170 },
     { name: 'Hambantota International Energy Port (Sri Lanka)', lat: 6.1248, lng: 81.1185, count: 24, maxFrp: 125 }
@@ -72,6 +69,8 @@ const GENERATE_CONTINUOUS_TELEMETRY = () => {
   strategicFacilities.forEach((fac) => {
     for (let i = 0; i < fac.count; i++) {
       const frp = Math.round(Math.random() * (fac.maxFrp - 45) + 45);
+      const hh = String(Math.floor(Math.random() * 24)).padStart(2, '0');
+      const mm = String(Math.floor(Math.random() * 60)).padStart(2, '0');
       points.push({
         latitude: +(fac.lat + (Math.random() - 0.5) * 0.28).toFixed(4),
         longitude: +(fac.lng + (Math.random() - 0.5) * 0.28).toFixed(4),
@@ -85,51 +84,29 @@ const GENERATE_CONTINUOUS_TELEMETRY = () => {
         threat_level: frp > 110 ? 'CRITICAL' : frp > 60 ? 'HIGH' : 'NORMAL',
         confidence: Math.round(Math.random() * 10 + 89) + '%',
         acq_date: dateStr,
-        acq_time: ${String(Math.floor(Math.random() * 24)).padStart(2, '0')}: UTC
+        acq_time: hh + ':' + mm + ' UTC'
       });
     }
   });
 
-  // 2. Continuous Sub-Continent Wide Dispersal (Covering every latitude & longitude smoothly)
-  // Continuous corridors: North -> Gangetic Basin -> Central -> Deccan -> Coastal -> Sri Lanka
   const broadCorridors = [
-    // Kashmir & Himalayan foothills
     { latBase: 33.5, lngBase: 75.0, latSpan: 2.2, lngSpan: 3.5, count: 65, region: 'Kashmir & Northern Sector' },
-    // Punjab, Haryana & Delhi NCR
     { latBase: 29.5, lngBase: 76.0, latSpan: 2.8, lngSpan: 3.0, count: 120, region: 'Punjab & Haryana Agri-Belt' },
-    // Western UP & Central Gangetic Basin
     { latBase: 27.2, lngBase: 79.5, latSpan: 2.5, lngSpan: 4.5, count: 140, region: 'Uttar Pradesh Gangetic Basin' },
-    // Eastern UP, Bihar & West Bengal
     { latBase: 25.0, lngBase: 84.5, latSpan: 2.6, lngSpan: 4.5, count: 150, region: 'Bihar & Bengal Plain' },
-    // Rajasthan Semi-Arid Corridor
     { latBase: 26.0, lngBase: 72.5, latSpan: 3.0, lngSpan: 4.0, count: 85, region: 'Rajasthan Corridor' },
-    // Gujarat Saurashtra & Coastal Belt
     { latBase: 22.0, lngBase: 71.5, latSpan: 2.2, lngSpan: 3.0, count: 90, region: 'Gujarat Western Plains' },
-    // Madhya Pradesh & Central Forest Reserves
     { latBase: 22.8, lngBase: 78.5, latSpan: 2.8, lngSpan: 5.5, count: 160, region: 'Central India Forest Reserve' },
-    // Odisha, Chhattisgarh & Eastern Mining Zone
     { latBase: 21.0, lngBase: 84.0, latSpan: 2.8, lngSpan: 4.0, count: 130, region: 'Odisha & Chhota Nagpur Belt' },
-    // Northeast Assam Valley & Hills
     { latBase: 26.0, lngBase: 92.5, latSpan: 2.0, lngSpan: 3.5, count: 80, region: 'Assam & Northeast Hills' },
-    // Maharashtra & North Deccan
     { latBase: 19.0, lngBase: 76.0, latSpan: 3.0, lngSpan: 4.5, count: 120, region: 'Maharashtra Deccan Plateau' },
-    // Telangana & Andhra Pradesh Corridor
     { latBase: 16.5, lngBase: 79.5, latSpan: 2.8, lngSpan: 3.8, count: 110, region: 'Andhra & Krishna Basin' },
-    // Karnataka & Western Ghats Ecology
     { latBase: 14.5, lngBase: 75.5, latSpan: 3.0, lngSpan: 2.8, count: 95, region: 'Karnataka & Western Ghats' },
-    // Tamil Nadu Plains & Coromandel Coast
     { latBase: 11.0, lngBase: 78.5, latSpan: 2.5, lngSpan: 2.2, count: 85, region: 'Tamil Nadu Inland Plains' },
-    // Kerala & Anamalai Corridor
     { latBase: 10.0, lngBase: 76.5, latSpan: 2.2, lngSpan: 1.2, count: 60, region: 'Kerala Coastal Corridor' },
-    
-    // --- FULL SRI LANKA CONTINUOUS ISLAND COVERAGE ---
-    // Northern Sri Lanka (Jaffna, Kilinochchi, Mannar)
     { latBase: 9.3,  lngBase: 80.2, latSpan: 0.9, lngSpan: 0.8, count: 35, region: 'Northern Sri Lanka' },
-    // North-Central Sri Lanka (Anuradhapura, Trincomalee)
     { latBase: 8.3,  lngBase: 80.6, latSpan: 1.0, lngSpan: 1.0, count: 45, region: 'North-Central Sri Lanka' },
-    // Central Highlands & Kandy (Sinharaja foothills, Nuwara Eliya)
     { latBase: 7.2,  lngBase: 80.7, latSpan: 0.9, lngSpan: 0.9, count: 55, region: 'Central Highlands (Sri Lanka)' },
-    // Southern Sri Lanka (Colombo, Galle, Hambantota, Yala)
     { latBase: 6.3,  lngBase: 80.6, latSpan: 0.8, lngSpan: 1.1, count: 45, region: 'Southern Coastal Sri Lanka' }
   ];
 
@@ -137,9 +114,10 @@ const GENERATE_CONTINUOUS_TELEMETRY = () => {
     for (let i = 0; i < c.count; i++) {
       const frp = Math.round(Math.random() * 65 + 10);
       const isCrit = frp > 58;
-      // Gaussian-like randomized continuous scattering
       const latOffset = (Math.random() - 0.5) * c.latSpan;
       const lngOffset = (Math.random() - 0.5) * c.lngSpan;
+      const hh = String(Math.floor(Math.random() * 24)).padStart(2, '0');
+      const mm = String(Math.floor(Math.random() * 60)).padStart(2, '0');
       
       points.push({
         latitude: +(c.latBase + latOffset).toFixed(4),
@@ -148,13 +126,13 @@ const GENERATE_CONTINUOUS_TELEMETRY = () => {
         brightness: Math.round(Math.random() * 35 + 305),
         satellite: i % 2 === 0 ? 'VIIRS_NOAA20_NRT' : 'MODIS_NRT',
         classification: 'Wildfire / Vegetation',
-        nearest_facility: None (),
+        nearest_facility: 'None (' + c.region + ')',
         distance_to_facility_km: +(Math.random() * 55 + 12).toFixed(2),
         is_anomaly: isCrit,
         threat_level: isCrit ? 'HIGH' : 'NORMAL',
         confidence: Math.round(Math.random() * 15 + 82) + '%',
         acq_date: dateStr,
-        acq_time: ${String(Math.floor(Math.random() * 24)).padStart(2, '0')}: UTC
+        acq_time: hh + ':' + mm + ' UTC'
       });
     }
   });
@@ -187,7 +165,6 @@ export default function App() {
   const [latency, setLatency] = useState(16);
 
   useEffect(() => {
-    // Refresh continuous telemetry regularly
     const interval = setInterval(() => {
       setData(GENERATE_CONTINUOUS_TELEMETRY());
       setLatency(Math.floor(Math.random() * 8 + 14));
