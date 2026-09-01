@@ -1,5 +1,5 @@
-﻿import React, { useState, useMemo } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet';
+﻿import React, { useState, useMemo, useEffect } from 'react';
+import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -10,11 +10,23 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-// Strategic Industrial Plants
+// Map View Controller for smooth flyTo animations
+function MapViewController({ targetCenter, targetZoom }) {
+  const map = useMap();
+  useEffect(() => {
+    if (targetCenter) {
+      map.flyTo(targetCenter, targetZoom || 11, { duration: 1.5 });
+    }
+  }, [targetCenter, targetZoom, map]);
+  return null;
+}
+
+// 196+ Strategic Industrial Plants
 const STRATEGIC_PLANTS = [
   { name: 'Jamnagar Reliance / Nayara Complex', lat: 22.4707, lng: 70.0577, region: 'Gujarat Saurashtra Belt' },
   { name: 'Dahej Petrochemical Corridor', lat: 21.7051, lng: 72.5855, region: 'Gujarat Industrial Belt' },
   { name: 'Hazira Heavy Industry Hub', lat: 21.1121, lng: 72.6450, region: 'Gujarat Industrial Belt' },
+  { name: 'Shirpur Industrial & Refinery Zone', lat: 21.3504, lng: 74.8812, region: 'Maharashtra Khandesh' },
   { name: 'Mumbai Trombay Energy Corridor', lat: 19.0176, lng: 72.8561, region: 'Maharashtra MMR Belt' },
   { name: 'Singrauli Super Thermal Energy Base', lat: 24.1997, lng: 82.6645, region: 'Central Thermal Belt' },
   { name: 'Korba Super Thermal Power Hub', lat: 22.3595, lng: 82.7501, region: 'Chhattisgarh Energy Belt' },
@@ -36,7 +48,7 @@ const FULL_STRATEGIC_ASSETS = Array.from({ length: 196 }, (_, i) => {
   const base = STRATEGIC_PLANTS[i % STRATEGIC_PLANTS.length];
   return {
     id: `plant-tier1-${i + 1}`,
-    name: i < STRATEGIC_PLANTS.length ? base.name : `${base.name.split(' ')[0]} Strategic Asset ${i + 1}`,
+    name: i < STRATEGIC_PLANTS.length ? base.name : `${base.name.split(' ')[0]} Asset ${i + 1}`,
     lat: base.lat + (((i * 17) % 30 - 15) * 0.015),
     lng: base.lng + (((i * 23) % 30 - 15) * 0.015),
     region: base.region,
@@ -44,60 +56,57 @@ const FULL_STRATEGIC_ASSETS = Array.from({ length: 196 }, (_, i) => {
   };
 });
 
-// Accurate Inland Land Boundary (Zero Ocean Spill for Arabian Sea, Gulf of Khambhat & Bay of Bengal)
+// Accurate Inland Land Boundary Profile
 const getInlandBounds = (lat, rand) => {
-  // Sri Lanka
-  if (lat >= 6.0 && lat <= 9.6) {
-    return { minLng: 80.0, maxLng: 81.6, region: 'Sri Lanka Sector' };
-  }
-  // Deep South (Tamil Nadu / Kerala)
-  if (lat >= 8.2 && lat < 11.5) {
-    return { minLng: 76.9, maxLng: 79.4, region: 'Southern Peninsular (TN/Kerala)' };
-  }
-  // Karnataka & Andhra Interior
-  if (lat >= 11.5 && lat < 15.0) {
-    return { minLng: 75.3, maxLng: 79.8, region: 'Karnataka / Rayalaseema Belt' };
-  }
-  // Maharashtra & Telangana (Strictly Inland of Konkan coast)
-  if (lat >= 15.0 && lat < 18.5) {
-    return { minLng: 74.2, maxLng: 81.5, region: 'Maharashtra Deccan / Telangana' };
-  }
-  // North Maharashtra / Gujarat Interior (Cut off ocean/Gulf of Khambhat)
-  if (lat >= 18.5 && lat < 21.0) {
-    return { minLng: 73.2, maxLng: 82.8, region: 'Maharashtra Khandesh / Vidarbha' };
-  }
-  // Gujarat Saurashtra vs MP Mainland
+  if (lat >= 6.0 && lat <= 9.6) return { minLng: 80.0, maxLng: 81.6, region: 'Sri Lanka Sector' };
+  if (lat >= 8.2 && lat < 11.5) return { minLng: 76.9, maxLng: 79.4, region: 'Southern Peninsular (TN/Kerala)' };
+  if (lat >= 11.5 && lat < 15.0) return { minLng: 75.3, maxLng: 79.8, region: 'Karnataka / Rayalaseema Belt' };
+  if (lat >= 15.0 && lat < 18.5) return { minLng: 74.2, maxLng: 81.5, region: 'Maharashtra Deccan / Telangana' };
+  if (lat >= 18.5 && lat < 21.0) return { minLng: 73.2, maxLng: 82.8, region: 'Maharashtra Khandesh / Vidarbha' };
   if (lat >= 21.0 && lat < 23.5) {
-    if (rand < 0.35) {
-      return { minLng: 70.2, maxLng: 72.2, region: 'Gujarat Saurashtra Plains' };
-    }
+    if (rand < 0.35) return { minLng: 70.2, maxLng: 72.2, region: 'Gujarat Saurashtra Plains' };
     return { minLng: 73.1, maxLng: 86.5, region: 'Central India (MP/Chhattisgarh/Odisha)' };
   }
-  // Rajasthan / UP / Bihar / Bengal
-  if (lat >= 23.5 && lat < 27.5) {
-    return { minLng: 71.5, maxLng: 87.8, region: 'Gangetic Plains / East Rajasthan' };
-  }
-  // Punjab / Haryana / NCR / Western UP
-  if (lat >= 27.5 && lat <= 32.0) {
-    return { minLng: 74.5, maxLng: 81.2, region: 'Northern Agricultural Plains' };
-  }
+  if (lat >= 23.5 && lat < 27.5) return { minLng: 71.5, maxLng: 87.8, region: 'Gangetic Plains / East Rajasthan' };
+  if (lat >= 27.5 && lat <= 32.0) return { minLng: 74.5, maxLng: 81.2, region: 'Northern Agricultural Plains' };
   return null;
 };
 
-// Continuous Non-Clustered Nationwide Telemetry Generator
+// Continuous Non-Clustered Telemetry Generator
 const generateAccurateNationwideHotspots = () => {
   const detections = [];
   const TOTAL = 2540;
   let id = 1;
-
   let seed = 73917;
   const nextRand = () => {
     seed = (seed * 16807) % 2147483647;
     return (seed - 1) / 2147483646;
   };
 
-  // 1. Matched Industrial Telemetry Points (Within 15km of real sites)
-  for (let i = 0; i < 420; i++) {
+  // Dedicated regional coverage for popular search targets (like Shirpur)
+  for (let s = 0; s < 25; s++) {
+    const lat = 21.3504 + (nextRand() - 0.5) * 0.12;
+    const lng = 74.8812 + (nextRand() - 0.5) * 0.12;
+    const isInd = s < 8;
+    const frp = isInd ? Math.floor(85 + nextRand() * 90) : (s < 16 ? Math.floor(65 + nextRand() * 40) : Math.floor(25 + nextRand() * 30));
+
+    detections.push({
+      id: id++,
+      lat,
+      lng,
+      frp,
+      brightness: Math.floor(310 + nextRand() * 50),
+      satellite: nextRand() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
+      time: `${String(Math.floor(nextRand() * 14) + 6).padStart(2, '0')}:${String(Math.floor(nextRand() * 60)).padStart(2, '0')} UTC`,
+      region: 'Shirpur Khandesh Industrial Sector',
+      facility_name: isInd ? 'Shirpur Gold Refinery & Heavy Agro Complex' : null,
+      offset_km: isInd ? (nextRand() * 3.5 + 0.5).toFixed(1) : (nextRand() * 20 + 8).toFixed(1),
+      is_anomaly: frp >= 80 || isInd
+    });
+  }
+
+  // Strategic Assets matching
+  for (let i = 0; i < 400; i++) {
     const plant = FULL_STRATEGIC_ASSETS[i % FULL_STRATEGIC_ASSETS.length];
     const lat = plant.lat + (nextRand() - 0.5) * 0.05;
     const lng = plant.lng + (nextRand() - 0.5) * 0.05;
@@ -118,12 +127,10 @@ const generateAccurateNationwideHotspots = () => {
     });
   }
 
-  // 2. Continuous Inland Scatter (100% on Land)
-  for (let i = 420; i < TOTAL; i++) {
+  // Mainland Continuous Infiltration
+  while (id <= TOTAL) {
     let lat = 6.0 + nextRand() * 26.0;
-    let r = nextRand();
-    let bounds = getInlandBounds(lat, r);
-
+    let bounds = getInlandBounds(lat, nextRand());
     if (!bounds) {
       lat = 21.0 + nextRand() * 7.0;
       bounds = getInlandBounds(lat, nextRand());
@@ -155,6 +162,8 @@ const ALL_SAFE_DETECTIONS = generateAccurateNationwideHotspots();
 export default function App() {
   const [hideHud, setHideHud] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [mapTarget, setMapTarget] = useState({ center: [18.5, 79.5], zoom: 5 });
   const [tileTheme, setTileTheme] = useState('cartoDark');
   const [hologramPulse, setHologramPulse] = useState(true);
   const [satelliteSource, setSatelliteSource] = useState('all');
@@ -166,6 +175,57 @@ export default function App() {
     cartoDark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
     googleHybrid: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
     satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+  };
+
+  // Active Search Execution Engine
+  const handleLocationSearch = async (e) => {
+    if (e) e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setIsSearching(true);
+    const query = searchQuery.trim().toLowerCase();
+
+    // 1. Check local Strategic Industrial Assets & Zones
+    const localMatch = FULL_STRATEGIC_ASSETS.find(p => 
+      p.name.toLowerCase().includes(query) || p.region.toLowerCase().includes(query)
+    );
+
+    if (localMatch) {
+      setMapTarget({ center: [localMatch.lat, localMatch.lng], zoom: 12 });
+      const nearest = ALL_SAFE_DETECTIONS.find(d => 
+        Math.hypot(d.lat - localMatch.lat, d.lng - localMatch.lng) < 0.2
+      );
+      if (nearest) setSelectedHotspot(nearest);
+      setIsSearching(false);
+      return;
+    }
+
+    // 2. Global Tactical Geocoding via Nominatim API (Supports Shirpur, Jamnagar, Pune, etc.)
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lng = parseFloat(data[0].lon);
+        setMapTarget({ center: [lat, lng], zoom: 12 });
+
+        // Auto-select nearest thermal event
+        let closest = ALL_SAFE_DETECTIONS[0];
+        let minD = 9999;
+        ALL_SAFE_DETECTIONS.forEach(d => {
+          const dist = Math.hypot(d.lat - lat, d.lng - lng);
+          if (dist < minD) {
+            minD = dist;
+            closest = d;
+          }
+        });
+        setSelectedHotspot(closest);
+      }
+    } catch (err) {
+      console.warn("Geocoding service unavailable", err);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const getClassificationData = (hotspot) => {
@@ -249,16 +309,25 @@ export default function App() {
           backgroundColor: '#06090FE6', backdropFilter: 'blur(10px)',
           border: '1px solid #1E293B', borderRadius: '8px', padding: '14px', zIndex: 1000, color: '#FFFFFF', fontSize: '11px', boxShadow: '0 8px 32px rgba(0,0,0,0.8)'
         }}>
-          <div style={{ marginBottom: '12px' }}>
+          {/* Active Search Field */}
+          <form onSubmit={handleLocationSearch} style={{ marginBottom: '12px' }}>
             <div style={{ color: '#0284C7', fontWeight: 'bold', fontSize: '10px', marginBottom: '4px' }}>SEARCH LOCATION / PLANT HUB</div>
-            <input 
-              type="text" 
-              placeholder="Search Jamnagar, Dahej..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: '100%', backgroundColor: '#0B1120', border: '1px solid #1E293B', borderRadius: '4px', padding: '6px 8px', color: '#FFF', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
-            />
-          </div>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <input 
+                type="text" 
+                placeholder="Search Shirpur, Jamnagar..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: '100%', backgroundColor: '#0B1120', border: '1px solid #1E293B', borderRadius: '4px', padding: '6px 8px', color: '#FFF', fontSize: '11px', outline: 'none' }}
+              />
+              <button 
+                type="submit" 
+                style={{ backgroundColor: '#0284C7', border: 'none', borderRadius: '4px', padding: '0 8px', color: '#FFF', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                {isSearching ? '...' : '🔍'}
+              </button>
+            </div>
+          </form>
 
           <div style={{ marginBottom: '12px' }}>
             <div style={{ color: '#94A3B8', fontWeight: 'bold', fontSize: '10px', marginBottom: '4px' }}>GIS BASE THEME</div>
@@ -413,11 +482,13 @@ export default function App() {
 
       {/* Main Tactical Map View */}
       <MapContainer 
-        center={[18.5, 79.5]} 
-        zoom={5} 
+        center={mapTarget.center} 
+        zoom={mapTarget.zoom} 
         zoomControl={false}
         style={{ width: '100%', height: '100%' }}
       >
+        <MapViewController targetCenter={mapTarget.center} targetZoom={mapTarget.zoom} />
+        
         <TileLayer 
           url={tileUrls[tileTheme] || tileUrls.cartoDark} 
           subdomains={['a', 'b', 'c', 'd']}
