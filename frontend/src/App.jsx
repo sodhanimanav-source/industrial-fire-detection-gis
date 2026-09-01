@@ -21,7 +21,10 @@ function MapViewController({ targetCenter, targetZoom }) {
   return null;
 }
 
-// 196+ Strategic Industrial Plants
+// NASA FIRMS MAP KEY (Yahan apni 32-character key dalein)
+const NASA_MAP_KEY = ' f6ca5e328ec33b4632c74dcec9dbda4b';
+
+// 196+ Strategic Industrial Assets Directory
 const STRATEGIC_PLANTS = [
   { name: 'Jamnagar Reliance / Nayara Complex', lat: 22.4707, lng: 70.0577, region: 'Gujarat Saurashtra Belt' },
   { name: 'Dahej Petrochemical Corridor', lat: 21.7051, lng: 72.5855, region: 'Gujarat Industrial Belt' },
@@ -56,108 +59,16 @@ const FULL_STRATEGIC_ASSETS = Array.from({ length: 196 }, (_, i) => {
   };
 });
 
-// Accurate Inland Land Boundary Profile
-const getInlandBounds = (lat, rand) => {
-  if (lat >= 6.0 && lat <= 9.6) return { minLng: 80.0, maxLng: 81.6, region: 'Sri Lanka Sector' };
-  if (lat >= 8.2 && lat < 11.5) return { minLng: 76.9, maxLng: 79.4, region: 'Southern Peninsular (TN/Kerala)' };
-  if (lat >= 11.5 && lat < 15.0) return { minLng: 75.3, maxLng: 79.8, region: 'Karnataka / Rayalaseema Belt' };
-  if (lat >= 15.0 && lat < 18.5) return { minLng: 74.2, maxLng: 81.5, region: 'Maharashtra Deccan / Telangana' };
-  if (lat >= 18.5 && lat < 21.0) return { minLng: 73.2, maxLng: 82.8, region: 'Maharashtra Khandesh / Vidarbha' };
-  if (lat >= 21.0 && lat < 23.5) {
-    if (rand < 0.35) return { minLng: 70.2, maxLng: 72.2, region: 'Gujarat Saurashtra Plains' };
-    return { minLng: 73.1, maxLng: 86.5, region: 'Central India (MP/Chhattisgarh/Odisha)' };
-  }
-  if (lat >= 23.5 && lat < 27.5) return { minLng: 71.5, maxLng: 87.8, region: 'Gangetic Plains / East Rajasthan' };
-  if (lat >= 27.5 && lat <= 32.0) return { minLng: 74.5, maxLng: 81.2, region: 'Northern Agricultural Plains' };
-  return null;
+// Fast Haversine Distance (km)
+const getDistanceKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 };
-
-// Continuous Non-Clustered Telemetry Generator
-const generateAccurateNationwideHotspots = () => {
-  const detections = [];
-  const TOTAL = 2540;
-  let id = 1;
-  let seed = 73917;
-  const nextRand = () => {
-    seed = (seed * 16807) % 2147483647;
-    return (seed - 1) / 2147483646;
-  };
-
-  // Dedicated regional coverage for popular search targets (like Shirpur)
-  for (let s = 0; s < 25; s++) {
-    const lat = 21.3504 + (nextRand() - 0.5) * 0.12;
-    const lng = 74.8812 + (nextRand() - 0.5) * 0.12;
-    const isInd = s < 8;
-    const frp = isInd ? Math.floor(85 + nextRand() * 90) : (s < 16 ? Math.floor(65 + nextRand() * 40) : Math.floor(25 + nextRand() * 30));
-
-    detections.push({
-      id: id++,
-      lat,
-      lng,
-      frp,
-      brightness: Math.floor(310 + nextRand() * 50),
-      satellite: nextRand() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
-      time: `${String(Math.floor(nextRand() * 14) + 6).padStart(2, '0')}:${String(Math.floor(nextRand() * 60)).padStart(2, '0')} UTC`,
-      region: 'Shirpur Khandesh Industrial Sector',
-      facility_name: isInd ? 'Shirpur Gold Refinery & Heavy Agro Complex' : null,
-      offset_km: isInd ? (nextRand() * 3.5 + 0.5).toFixed(1) : (nextRand() * 20 + 8).toFixed(1),
-      is_anomaly: frp >= 80 || isInd
-    });
-  }
-
-  // Strategic Assets matching
-  for (let i = 0; i < 400; i++) {
-    const plant = FULL_STRATEGIC_ASSETS[i % FULL_STRATEGIC_ASSETS.length];
-    const lat = plant.lat + (nextRand() - 0.5) * 0.05;
-    const lng = plant.lng + (nextRand() - 0.5) * 0.05;
-    const frpVal = Math.floor(75 + nextRand() * 115);
-
-    detections.push({
-      id: id++,
-      lat,
-      lng,
-      frp: frpVal,
-      brightness: Math.floor(310 + nextRand() * 50),
-      satellite: nextRand() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
-      time: `${String(Math.floor(nextRand() * 14) + 6).padStart(2, '0')}:${String(Math.floor(nextRand() * 60)).padStart(2, '0')} UTC`,
-      region: plant.region,
-      facility_name: plant.name,
-      offset_km: (nextRand() * 4.2 + 0.5).toFixed(1),
-      is_anomaly: true
-    });
-  }
-
-  // Mainland Continuous Infiltration
-  while (id <= TOTAL) {
-    let lat = 6.0 + nextRand() * 26.0;
-    let bounds = getInlandBounds(lat, nextRand());
-    if (!bounds) {
-      lat = 21.0 + nextRand() * 7.0;
-      bounds = getInlandBounds(lat, nextRand());
-    }
-
-    const lng = bounds.minLng + nextRand() * (bounds.maxLng - bounds.minLng);
-    const frpVal = Math.floor(18 + nextRand() * 95);
-
-    detections.push({
-      id: id++,
-      lat,
-      lng,
-      frp: frpVal,
-      brightness: Math.floor(305 + nextRand() * 55),
-      satellite: nextRand() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
-      time: `${String(Math.floor(nextRand() * 14) + 6).padStart(2, '0')}:${String(Math.floor(nextRand() * 60)).padStart(2, '0')} UTC`,
-      region: bounds.region,
-      facility_name: null,
-      offset_km: (nextRand() * 80 + 16).toFixed(1),
-      is_anomaly: frpVal >= 80
-    });
-  }
-
-  return detections;
-};
-
-const ALL_SAFE_DETECTIONS = generateAccurateNationwideHotspots();
 
 export default function App() {
   const [hideHud, setHideHud] = useState(false);
@@ -169,7 +80,9 @@ export default function App() {
   const [satelliteSource, setSatelliteSource] = useState('all');
   const [timeWindow, setTimeWindow] = useState('5days');
   const [typeFilter, setTypeFilter] = useState('ALL');
-  const [selectedHotspot, setSelectedHotspot] = useState(ALL_SAFE_DETECTIONS[0]);
+  const [hotspots, setHotspots] = useState([]);
+  const [selectedHotspot, setSelectedHotspot] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const tileUrls = {
     cartoDark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
@@ -177,7 +90,81 @@ export default function App() {
     satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
   };
 
-  // Active Search Execution Engine
+  // Real-Time NASA FIRMS Telemetry Fetcher
+  useEffect(() => {
+    const fetchRealTimeFIRMS = async () => {
+      if (!NASA_MAP_KEY || NASA_MAP_KEY === 'YOUR_NASA_MAP_KEY') return;
+
+      setIsLoading(true);
+      try {
+        const dayParam = timeWindow === '24hours' ? '1' : (timeWindow === '3days' ? '3' : '5');
+        const sensor = satelliteSource === 'viirs' ? 'VIIRS_SNPP_NRT' : (satelliteSource === 'modis' ? 'MODIS_NRT' : 'VIIRS_NOAA20_NRT');
+        
+        // India + Sri Lanka Geographic Bounding Box [minLng, minLat, maxLng, maxLat]
+        const url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${NASA_MAP_KEY}/${sensor}/68,5,90,37/${dayParam}`;
+        
+        const res = await fetch(url);
+        const csvData = await res.text();
+        const lines = csvData.trim().split('\n');
+
+        if (lines.length > 1 && !csvData.includes('Invalid MAP_KEY')) {
+          const headers = lines[0].split(',');
+          const latIdx = headers.indexOf('latitude');
+          const lngIdx = headers.indexOf('longitude');
+          const frpIdx = headers.indexOf('frp');
+          const brightIdx = headers.indexOf('bright_ti4') !== -1 ? headers.indexOf('bright_ti4') : headers.indexOf('brightness');
+          const timeIdx = headers.indexOf('acq_time');
+
+          const parsed = lines.slice(1).map((line, idx) => {
+            const cols = line.split(',');
+            const lat = parseFloat(cols[latIdx]);
+            const lng = parseFloat(cols[lngIdx]);
+            const frp = parseFloat(cols[frpIdx]) || 12.0;
+            const brightness = parseFloat(cols[brightIdx]) || 310.0;
+            const timeStr = cols[timeIdx] ? `${cols[timeIdx].slice(0, 2)}:${cols[timeIdx].slice(2, 4)} UTC` : '12:00 UTC';
+
+            // Real-time distance evaluation against 196 strategic facilities
+            let nearestPlant = null;
+            let minDist = 9999;
+            FULL_STRATEGIC_ASSETS.forEach(plant => {
+              const d = getDistanceKm(lat, lng, plant.lat, plant.lng);
+              if (d < minDist) {
+                minDist = d;
+                nearestPlant = plant;
+              }
+            });
+
+            const isIndustrial = minDist <= 15.0;
+
+            return {
+              id: idx + 1,
+              lat,
+              lng,
+              frp,
+              brightness,
+              satellite: sensor.includes('VIIRS') ? 'VIIRS_NRT' : 'MODIS_NRT',
+              time: timeStr,
+              region: lat < 10.0 ? 'Sri Lanka Sector' : (nearestPlant ? nearestPlant.region : 'Indian Sector'),
+              facility_name: isIndustrial && nearestPlant ? nearestPlant.name : null,
+              offset_km: minDist.toFixed(1),
+              is_anomaly: frp >= 80 || isIndustrial
+            };
+          });
+
+          setHotspots(parsed);
+          if (parsed.length > 0) setSelectedHotspot(parsed[0]);
+        }
+      } catch (err) {
+        console.error('Error ingesting live FIRMS telemetry', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRealTimeFIRMS();
+  }, [satelliteSource, timeWindow]);
+
+  // Tactical Geocoding Search
   const handleLocationSearch = async (e) => {
     if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -185,14 +172,13 @@ export default function App() {
     setIsSearching(true);
     const query = searchQuery.trim().toLowerCase();
 
-    // 1. Check local Strategic Industrial Assets & Zones
     const localMatch = FULL_STRATEGIC_ASSETS.find(p => 
       p.name.toLowerCase().includes(query) || p.region.toLowerCase().includes(query)
     );
 
     if (localMatch) {
       setMapTarget({ center: [localMatch.lat, localMatch.lng], zoom: 12 });
-      const nearest = ALL_SAFE_DETECTIONS.find(d => 
+      const nearest = hotspots.find(d => 
         Math.hypot(d.lat - localMatch.lat, d.lng - localMatch.lng) < 0.2
       );
       if (nearest) setSelectedHotspot(nearest);
@@ -200,7 +186,6 @@ export default function App() {
       return;
     }
 
-    // 2. Global Tactical Geocoding via Nominatim API (Supports Shirpur, Jamnagar, Pune, etc.)
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
       const data = await res.json();
@@ -209,20 +194,21 @@ export default function App() {
         const lng = parseFloat(data[0].lon);
         setMapTarget({ center: [lat, lng], zoom: 12 });
 
-        // Auto-select nearest thermal event
-        let closest = ALL_SAFE_DETECTIONS[0];
-        let minD = 9999;
-        ALL_SAFE_DETECTIONS.forEach(d => {
-          const dist = Math.hypot(d.lat - lat, d.lng - lng);
-          if (dist < minD) {
-            minD = dist;
-            closest = d;
-          }
-        });
-        setSelectedHotspot(closest);
+        if (hotspots.length > 0) {
+          let closest = hotspots[0];
+          let minD = 9999;
+          hotspots.forEach(d => {
+            const dist = Math.hypot(d.lat - lat, d.lng - lng);
+            if (dist < minD) {
+              minD = dist;
+              closest = d;
+            }
+          });
+          setSelectedHotspot(closest);
+        }
       }
     } catch (err) {
-      console.warn("Geocoding service unavailable", err);
+      console.warn('Geocoding service unavailable', err);
     } finally {
       setIsSearching(false);
     }
@@ -252,7 +238,7 @@ export default function App() {
   };
 
   const filteredHotspots = useMemo(() => {
-    return ALL_SAFE_DETECTIONS.filter(h => {
+    return hotspots.filter(h => {
       const offset = parseFloat(h.offset_km || 999);
       const isInd = (h.facility_name && h.facility_name !== 'None') || offset <= 15.0;
 
@@ -261,7 +247,7 @@ export default function App() {
       if (typeFilter === 'WILDFIRE') return !isInd;
       return true;
     });
-  }, [typeFilter]);
+  }, [hotspots, typeFilter]);
 
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: '#06090F', fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -293,7 +279,7 @@ export default function App() {
           </div>
           <div style={{ backgroundColor: '#0B1120', padding: '4px 10px', borderRadius: '4px', border: '1px solid #1E293B' }}>
             <span style={{ color: '#94A3B8' }}>ACTIVE DETECTIONS: </span>
-            <span style={{ color: '#EF4444', fontWeight: 'bold' }}>{filteredHotspots.length}</span>
+            <span style={{ color: '#EF4444', fontWeight: 'bold' }}>{isLoading ? 'SYNCING SATELLITES...' : filteredHotspots.length}</span>
           </div>
           <div style={{ backgroundColor: '#0B1120', padding: '4px 10px', borderRadius: '4px', border: '1px solid #1E293B' }}>
             <span style={{ color: '#94A3B8' }}>STATUS: </span>
@@ -309,7 +295,6 @@ export default function App() {
           backgroundColor: '#06090FE6', backdropFilter: 'blur(10px)',
           border: '1px solid #1E293B', borderRadius: '8px', padding: '14px', zIndex: 1000, color: '#FFFFFF', fontSize: '11px', boxShadow: '0 8px 32px rgba(0,0,0,0.8)'
         }}>
-          {/* Active Search Field */}
           <form onSubmit={handleLocationSearch} style={{ marginBottom: '12px' }}>
             <div style={{ color: '#0284C7', fontWeight: 'bold', fontSize: '10px', marginBottom: '4px' }}>SEARCH LOCATION / PLANT HUB</div>
             <div style={{ display: 'flex', gap: '4px' }}>
@@ -488,7 +473,7 @@ export default function App() {
         style={{ width: '100%', height: '100%' }}
       >
         <MapViewController targetCenter={mapTarget.center} targetZoom={mapTarget.zoom} />
-        
+
         <TileLayer 
           url={tileUrls[tileTheme] || tileUrls.cartoDark} 
           subdomains={['a', 'b', 'c', 'd']}
