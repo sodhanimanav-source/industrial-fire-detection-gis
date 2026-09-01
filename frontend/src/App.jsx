@@ -11,7 +11,7 @@ L.Icon.Default.mergeOptions({
 });
 
 // NASA FIRMS Map Key
-const NASA_MAP_KEY = 'YOUR_NASA_MAP_KEY';
+const NASA_MAP_KEY = 'f6ca5e328ec33b4632c74dcec9dbda4b';
 
 // Strategic Industrial Plants (196+ Strategic Defense & Industrial Focus Units)
 const STRATEGIC_PLANTS = Array.from({ length: 210 }, (_, i) => {
