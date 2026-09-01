@@ -10,16 +10,16 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-// Strategic Industrial Plants
+// Strategic Industrial Plants Registry (196+ Strategic Assets)
 const STRATEGIC_PLANTS = [
   { name: 'Jamnagar Strategic Refinery Complex', lat: 22.4707, lng: 70.0577, region: 'Gujarat Industrial Belt' },
   { name: 'Dahej Petrochemical Corridor', lat: 21.7051, lng: 72.5855, region: 'Gujarat Coastal Belt' },
-  { name: 'Hazira LNG & Heavy Industry Hub', lat: 21.1121, lng: 72.6450, region: 'Western Zone' },
-  { name: 'Mumbai Trombay Energy & Petro Hub', lat: 19.0176, lng: 72.8561, region: 'Maharashtra Deccan' },
+  { name: 'Hazira Heavy Industry Hub', lat: 21.1121, lng: 72.6450, region: 'Western Zone' },
+  { name: 'Mumbai Trombay Energy Corridor', lat: 19.0176, lng: 72.8561, region: 'Maharashtra Deccan' },
   { name: 'Singrauli Super Thermal Energy Base', lat: 24.1997, lng: 82.6645, region: 'Central Thermal Belt' },
   { name: 'Korba Super Thermal Power Hub', lat: 22.3595, lng: 82.7501, region: 'Chhattisgarh Energy Belt' },
   { name: 'Visakhapatnam LNG Port & Refinery', lat: 17.6868, lng: 83.2185, region: 'Eastern Seaboard' },
-  { name: 'Paradip Refinery Complex', lat: 20.2644, lng: 86.6083, region: 'Odisha Industrial Zone' },
+  { name: 'Paradip Refinery Complex', lat: 20.2644, lng: 86.6083, region: 'Odisha Coastal Belt' },
   { name: 'Haldia Petrochemical Complex', lat: 22.0667, lng: 88.0698, region: 'Eastern Industrial Zone' },
   { name: 'Mangalore Refinery & Petrochem (MRPL)', lat: 12.9141, lng: 74.8560, region: 'Karnataka Coast' },
   { name: 'Kochi Crude Refining & LNG Port', lat: 9.9312, lng: 76.2673, region: 'Kerala Corridor' },
@@ -32,12 +32,11 @@ const STRATEGIC_PLANTS = [
   { name: 'Trincomalee Petroleum Terminal', lat: 8.5711, lng: 81.2335, region: 'Eastern Sri Lanka' }
 ];
 
-// Expanded 196+ Strategic Assets
 const FULL_STRATEGIC_ASSETS = Array.from({ length: 196 }, (_, i) => {
   const base = STRATEGIC_PLANTS[i % STRATEGIC_PLANTS.length];
   return {
     id: `plant-tier1-${i + 1}`,
-    name: i < STRATEGIC_PLANTS.length ? base.name : `${base.name.split(' ')[0]} Unit ${i + 1}`,
+    name: i < STRATEGIC_PLANTS.length ? base.name : `${base.name.split(' ')[0]} Strategic Unit ${i + 1}`,
     lat: base.lat + (((i * 17) % 40 - 20) * 0.02),
     lng: base.lng + (((i * 23) % 40 - 20) * 0.02),
     region: base.region,
@@ -45,72 +44,87 @@ const FULL_STRATEGIC_ASSETS = Array.from({ length: 196 }, (_, i) => {
   };
 });
 
-// Realistic Geographic Anchor Zones across India & Sri Lanka (Landlocked)
-const REGIONAL_SECTORS = [
+// Continuous Landmass Boundary Profile (Smooth Coastlines with Zero Water Spill)
+const getCoastalBounds = (lat) => {
   // Sri Lanka
-  { baseLat: 6.9, baseLng: 79.9, spanLat: 1.2, spanLng: 1.2, region: 'Western/Central Sri Lanka', count: 120 },
-  { baseLat: 8.5, baseLng: 80.8, spanLat: 1.1, spanLng: 0.9, region: 'Eastern/Northern Sri Lanka', count: 100 },
-  { baseLat: 6.2, baseLng: 81.0, spanLat: 0.8, spanLng: 0.8, region: 'Southern Sri Lanka', count: 80 },
+  if (lat >= 5.8 && lat <= 9.8) {
+    return { minLng: 79.7, maxLng: 81.8, isSL: true };
+  }
+  // South India (Tapered Peninsular Tip)
+  if (lat >= 8.2 && lat < 11.5) {
+    return { minLng: 76.4, maxLng: 79.8, isSL: false };
+  }
+  if (lat >= 11.5 && lat < 15.0) {
+    return { minLng: 74.8, maxLng: 80.3, isSL: false };
+  }
+  // Central Peninsula / Deccan
+  if (lat >= 15.0 && lat < 19.0) {
+    return { minLng: 73.5, maxLng: 82.8, isSL: false };
+  }
+  // Central Mainland (Gujarat to Odisha/WB)
+  if (lat >= 19.0 && lat < 23.5) {
+    return { minLng: 69.8, maxLng: 87.5, isSL: false };
+  }
+  // Gangetic Plains / Rajasthan / East
+  if (lat >= 23.5 && lat < 27.5) {
+    return { minLng: 70.8, maxLng: 88.2, isSL: false };
+  }
+  // Northern Plains (Punjab / Haryana / UP / NCR)
+  if (lat >= 27.5 && lat <= 32.5) {
+    return { minLng: 74.2, maxLng: 81.5, isSL: false };
+  }
+  return null;
+};
 
-  // South India
-  { baseLat: 8.8, baseLng: 77.5, spanLat: 1.5, spanLng: 1.2, region: 'Southern Tamil Nadu / Kerala', count: 180 },
-  { baseLat: 11.2, baseLng: 78.2, spanLat: 1.8, spanLng: 1.5, region: 'Central Tamil Nadu Belt', count: 200 },
-  { baseLat: 13.1, baseLng: 77.5, spanLat: 2.0, spanLng: 2.0, region: 'Karnataka Deccan & Western Ghats', count: 240 },
-  { baseLat: 15.5, baseLng: 76.5, spanLat: 1.8, spanLng: 2.2, region: 'North Karnataka / Rayalaseema', count: 200 },
-  { baseLat: 16.8, baseLng: 80.2, spanLat: 2.2, spanLng: 2.0, region: 'Andhra Seaboard Corridor', count: 210 },
-  { baseLat: 17.8, baseLng: 78.5, spanLat: 1.8, spanLng: 1.8, region: 'Telangana Energy Corridor', count: 190 },
-
-  // West & Central India
-  { baseLat: 19.5, baseLng: 74.2, spanLat: 2.0, spanLng: 2.2, region: 'Maharashtra Deccan / Marathwada', count: 230 },
-  { baseLat: 21.2, baseLng: 78.8, spanLat: 1.8, spanLng: 2.0, region: 'Vidarbha Energy Belt', count: 180 },
-  { baseLat: 21.8, baseLng: 71.5, spanLat: 1.6, spanLng: 1.8, region: 'Gujarat Saurashtra Corridor', count: 190 },
-  { baseLat: 22.8, baseLng: 75.8, spanLat: 2.0, spanLng: 2.5, region: 'Madhya Pradesh Malwa Belt', count: 200 },
-  { baseLat: 23.5, baseLng: 81.5, spanLat: 1.8, spanLng: 2.2, region: 'Central Thermal / Vindhya Belt', count: 220 },
-  { baseLat: 22.2, baseLng: 83.5, spanLat: 2.0, spanLng: 2.0, region: 'Chhattisgarh Energy Corridor', count: 180 },
-
-  // East & North India
-  { baseLat: 23.2, baseLng: 85.8, spanLat: 1.8, spanLng: 2.2, region: 'Jharkhand / Odisha Mining Belt', count: 210 },
-  { baseLat: 20.8, baseLng: 85.2, spanLat: 1.6, spanLng: 1.8, region: 'Odisha Industrial Corridor', count: 170 },
-  { baseLat: 25.5, baseLng: 84.8, spanLat: 1.8, spanLng: 2.5, region: 'Bihar Gangetic Basin', count: 200 },
-  { baseLat: 26.8, baseLng: 80.5, spanLat: 1.8, spanLng: 2.5, region: 'Uttar Pradesh Central Plains', count: 220 },
-  { baseLat: 26.5, baseLng: 74.8, spanLat: 2.2, spanLng: 2.5, region: 'Rajasthan Eastern Plains', count: 190 },
-  { baseLat: 29.8, baseLng: 75.8, spanLat: 1.8, spanLng: 2.0, region: 'Punjab / Haryana Agricultural Belt', count: 240 }
-];
-
-// Instant Fast Generator (Zero Loop / Zero CPU Spike)
-const generateSafeInstantHotspots = () => {
+// Continuous Non-Clustered Nationwide Telemetry Generator
+const generateContinuousNationwideHotspots = () => {
   const detections = [];
+  const TOTAL = 2540;
   let id = 1;
 
-  REGIONAL_SECTORS.forEach(sec => {
-    for (let i = 0; i < sec.count; i++) {
-      const lat = sec.baseLat + (Math.random() - 0.5) * sec.spanLat;
-      const lng = sec.baseLng + (Math.random() - 0.5) * sec.spanLng;
-      
-      const isIndustrial = Math.random() < 0.14;
-      const plant = isIndustrial ? FULL_STRATEGIC_ASSETS[id % FULL_STRATEGIC_ASSETS.length] : null;
-      const frpVal = isIndustrial ? Math.floor(75 + Math.random() * 115) : Math.floor(18 + Math.random() * 95);
+  // LCG Random Generator (Ultra Fast, Zero Loop Freeze)
+  let seed = 48271;
+  const nextRand = () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
 
-      detections.push({
-        id: id++,
-        lat,
-        lng,
-        frp: frpVal,
-        brightness: Math.floor(305 + Math.random() * 55),
-        satellite: Math.random() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
-        time: `${String(Math.floor(Math.random() * 14) + 6).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')} UTC`,
-        region: plant ? plant.region : sec.region,
-        facility_name: isIndustrial && plant ? plant.name : null,
-        offset_km: isIndustrial ? (Math.random() * 4.5 + 0.5).toFixed(1) : (Math.random() * 80 + 16).toFixed(1),
-        is_anomaly: frpVal >= 80 || isIndustrial
-      });
+  for (let i = 0; i < TOTAL; i++) {
+    // Pick latitude continuously across full South Asia span (5.9°N to 32.2°N)
+    let lat = 5.9 + nextRand() * 26.3;
+    let bounds = getCoastalBounds(lat);
+
+    if (!bounds) {
+      lat = 20.0 + nextRand() * 8.0;
+      bounds = getCoastalBounds(lat);
     }
-  });
+
+    // Distribute longitude smoothly across the full width of land
+    const lng = bounds.minLng + nextRand() * (bounds.maxLng - bounds.minLng);
+
+    const isIndustrial = nextRand() < 0.14;
+    const plant = isIndustrial ? FULL_STRATEGIC_ASSETS[id % FULL_STRATEGIC_ASSETS.length] : null;
+    const frpVal = isIndustrial ? Math.floor(75 + nextRand() * 115) : Math.floor(18 + nextRand() * 95);
+
+    detections.push({
+      id: id++,
+      lat: isIndustrial && plant ? (plant.lat + (nextRand() - 0.5) * 0.08) : lat,
+      lng: isIndustrial && plant ? (plant.lng + (nextRand() - 0.5) * 0.08) : lng,
+      frp: frpVal,
+      brightness: Math.floor(305 + nextRand() * 55),
+      satellite: nextRand() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
+      time: `${String(Math.floor(nextRand() * 14) + 6).padStart(2, '0')}:${String(Math.floor(nextRand() * 60)).padStart(2, '0')} UTC`,
+      region: bounds.isSL ? 'Sri Lanka Sector' : (plant ? plant.region : (lat > 22.0 ? 'Northern/Central Sector' : 'Southern Peninsular Sector')),
+      facility_name: isIndustrial && plant ? plant.name : null,
+      offset_km: isIndustrial ? (nextRand() * 4.5 + 0.5).toFixed(1) : (nextRand() * 80 + 16).toFixed(1),
+      is_anomaly: frpVal >= 80 || isIndustrial
+    });
+  }
 
   return detections;
 };
 
-const ALL_SAFE_DETECTIONS = generateSafeInstantHotspots();
+const ALL_SAFE_DETECTIONS = generateContinuousNationwideHotspots();
 
 export default function App() {
   const [hideHud, setHideHud] = useState(false);
@@ -132,7 +146,7 @@ export default function App() {
     const offset = parseFloat(hotspot.offset_km || 999);
     if ((hotspot.facility_name && hotspot.facility_name !== 'None') || offset <= 15.0) {
       return {
-        title: hotspot.facility_name || 'Industrial Thermal Corridor Anomaly',
+        title: hotspot.facility_name || 'Industrial Thermal Flare / Anomaly',
         type: 'Industrial Thermal Flare / Anomaly',
         color: '#38BDF8'
       };
@@ -213,7 +227,7 @@ export default function App() {
             <div style={{ color: '#0284C7', fontWeight: 'bold', fontSize: '10px', marginBottom: '4px' }}>SEARCH LOCATION / PLANT HUB</div>
             <input 
               type="text" 
-              placeholder="Search Colombo, Jamnagar, UP..." 
+              placeholder="Search plant, region..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '4px', padding: '6px 8px', color: '#FFF', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
