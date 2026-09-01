@@ -3,7 +3,6 @@ import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Leaflet Default Marker Setup
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
@@ -11,65 +10,87 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-// Strategic Industrial Sites (196 Strategic Defense Focus Units)
-const STRATEGIC_PLANTS = [
-  { id: 'plant-1', name: 'Jamnagar Strategic Refinery', lat: 22.4707, lng: 70.0577, region: 'Gujarat Industrial Belt' },
-  { id: 'plant-2', name: 'Singrauli Super Thermal Hub', lat: 24.1997, lng: 82.6645, region: 'Singrauli Belt' },
-  { id: 'plant-3', name: 'Dahej Petrochemical Corridor', lat: 21.7051, lng: 72.5855, region: 'Gujarat Coast' },
-  { id: 'plant-4', name: 'Visakhapatnam LNG Port & Refinery', lat: 17.6868, lng: 83.2185, region: 'Eastern Seaboard' },
-  { id: 'plant-5', name: 'Mangalore Petrochem Complex', lat: 12.9141, lng: 74.8560, region: 'Karnataka Coast' },
-  { id: 'plant-6', name: 'Mumbai Offshore & Trombay Complex', lat: 19.0176, lng: 72.8561, region: 'Maharashtra Deccan' },
-  { id: 'plant-7', name: 'Haldia Petrochemicals Hub', lat: 22.0667, lng: 88.0698, region: 'West Bengal Hub' },
-  { id: 'plant-8', name: 'Barauni Industrial Refinery', lat: 25.4670, lng: 85.9678, region: 'Northern Plains' }
-];
-
-// Generate Full Cluster Dataset (2,142 Active Hotspot Detections across India)
-const generateDenseDetections = () => {
-  const clusters = [
-    { centerLat: 22.5, centerLng: 71.0, count: 280, region: 'Gujarat Industrial Belt' },
-    { centerLat: 19.2, centerLng: 73.5, count: 420, region: 'Maharashtra Deccan' },
-    { centerLat: 14.5, centerLng: 76.5, count: 480, region: 'Karnataka & Western Ghats' },
-    { centerLat: 23.8, centerLng: 83.5, count: 460, region: 'Central & Eastern Thermal Belt' },
-    { centerLat: 30.2, centerLng: 75.8, count: 310, region: 'Northern Plains (Punjab/Haryana)' },
-    { centerLat: 10.8, centerLng: 78.5, count: 192, region: 'Southern Peninsula' }
+// Strategic Industrial Plants Registry (196 Top Tier-1 Sites across all Indian Zones)
+const STRATEGIC_PLANTS = Array.from({ length: 196 }, (_, i) => {
+  const baseHubs = [
+    { name: 'Jamnagar Strategic Refinery', lat: 22.4707, lng: 70.0577, region: 'Gujarat Industrial Belt' },
+    { name: 'Dahej Petrochemical Complex', lat: 21.7051, lng: 72.5855, region: 'Gujarat Coastal Belt' },
+    { name: 'Hazira LNG & Heavy Industry Hub', lat: 21.1121, lng: 72.6450, region: 'Western Zone' },
+    { name: 'Mumbai Trombay Energy Corridor', lat: 19.0176, lng: 72.8561, region: 'Maharashtra Deccan' },
+    { name: 'Singrauli Thermal Power Base', lat: 24.1997, lng: 82.6645, region: 'Central Thermal Belt' },
+    { name: 'Korba Super Thermal Hub', lat: 22.3595, lng: 82.7501, region: 'Chhattisgarh Energy Belt' },
+    { name: 'Visakhapatnam Petroleum/LNG Port', lat: 17.6868, lng: 83.2185, region: 'Eastern Seaboard' },
+    { name: 'Paradip Refinery & Petrochem Port', lat: 20.2644, lng: 86.6083, region: 'Odisha Industrial Zone' },
+    { name: 'Haldia Petrochemical Complex', lat: 22.0667, lng: 88.0698, region: 'Eastern Industrial Zone' },
+    { name: 'Mangalore Refinery & Petrochem (MRPL)', lat: 12.9141, lng: 74.8560, region: 'Karnataka Coast' },
+    { name: 'Kochi Crude Refining & LNG Hub', lat: 9.9312, lng: 76.2673, region: 'Kerala Corridor' },
+    { name: 'Manali Industrial & Petrochem Hub', lat: 13.1673, lng: 80.2582, region: 'Tamil Nadu Coast' },
+    { name: 'Barauni Petrochemical Center', lat: 25.4670, lng: 85.9678, region: 'Northern Plains' },
+    { name: 'Panipat Strategic Petrochem Hub', lat: 29.3909, lng: 76.9635, region: 'Northern Industrial Belt' },
+    { name: 'Mathura Refinery & Petrochem', lat: 27.4924, lng: 77.6737, region: 'Yamuna Industrial Corridor' }
   ];
+  const hub = baseHubs[i % baseHubs.length];
+  const offsetLat = ((i * 13) % 40 - 20) * 0.08;
+  const offsetLng = ((i * 19) % 40 - 20) * 0.08;
+  return {
+    id: `plant-${i + 1}`,
+    name: i < 15 ? hub.name : `Strategic Energy Asset ${i + 1} (${hub.name.split(' ')[0]})`,
+    lat: hub.lat + offsetLat,
+    lng: hub.lng + offsetLng,
+    region: hub.region,
+    buffer_km: 5
+  };
+});
 
+// Fully Scattered Telemetry Hotspots across entire Indian Mainland (No Isolated Clusters)
+const generateNationwideScatteredDetections = () => {
   const detections = [];
-  let idCounter = 1;
+  const TOTAL_HOTSPOTS = 2142;
 
-  clusters.forEach(cluster => {
-    for (let i = 0; i < cluster.count; i++) {
-      // Gaussian scatter
-      const u1 = Math.random();
-      const u2 = Math.random();
-      const randStd = Math.sqrt(-2.0 * Math.log(u1)) * Math.sin(2.0 * Math.PI * u2);
-      const lat = cluster.centerLat + (randStd * 1.35) + (Math.random() - 0.5) * 0.4;
-      const lng = cluster.centerLng + ((Math.random() - 0.5) * 2.6);
+  // Real Indian geographical boundaries
+  const MIN_LAT = 8.8;
+  const MAX_LAT = 32.5;
+  const MIN_LNG = 69.5;
+  const MAX_LNG = 88.5;
 
-      const frpVal = Math.floor(Math.random() * 125) + 15;
-      const isIndustrial = Math.random() < 0.08;
-      const nearestPlant = isIndustrial ? STRATEGIC_PLANTS[i % STRATEGIC_PLANTS.length] : null;
+  for (let i = 0; i < TOTAL_HOTSPOTS; i++) {
+    let lat, lng, isIndustrial = false, plantRef = null;
 
-      detections.push({
-        id: idCounter++,
-        lat,
-        lng,
-        frp: frpVal,
-        brightness: Math.floor(305 + Math.random() * 55),
-        satellite: Math.random() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
-        time: `${String(Math.floor(Math.random() * 14) + 6).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')} UTC`,
-        region: cluster.region,
-        facility_name: nearestPlant ? nearestPlant.name : null,
-        offset_km: nearestPlant ? (Math.random() * 4.2 + 0.5).toFixed(1) : (Math.random() * 85 + 15).toFixed(1),
-        is_anomaly: frpVal >= 80 || isIndustrial
-      });
+    // 12% hotspots are specifically tied to 196 industrial plant chimneys / flares
+    if (i < Math.floor(TOTAL_HOTSPOTS * 0.12)) {
+      plantRef = STRATEGIC_PLANTS[i % STRATEGIC_PLANTS.length];
+      lat = plantRef.lat + (Math.random() - 0.5) * 0.06; // < 4km offset
+      lng = plantRef.lng + (Math.random() - 0.5) * 0.06;
+      isIndustrial = true;
+    } else {
+      // 88% hotspots are smoothly scattered across the entire Indian country
+      lat = MIN_LAT + Math.random() * (MAX_LAT - MIN_LAT);
+      lng = MIN_LNG + Math.random() * (MAX_LNG - MIN_LNG);
     }
-  });
+
+    const frpVal = isIndustrial 
+      ? Math.floor(75 + Math.random() * 115) 
+      : Math.floor(20 + Math.random() * 95);
+
+    detections.push({
+      id: i + 1,
+      lat,
+      lng,
+      frp: frpVal,
+      brightness: Math.floor(305 + Math.random() * 55),
+      satellite: Math.random() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
+      time: `${String(Math.floor(Math.random() * 14) + 6).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')} UTC`,
+      region: plantRef ? plantRef.region : (lat > 23 ? 'Northern/Central Sector' : 'Southern/Peninsular Sector'),
+      facility_name: isIndustrial && plantRef ? plantRef.name : null,
+      offset_km: isIndustrial ? (Math.random() * 3.5 + 0.4).toFixed(1) : (Math.random() * 90 + 12).toFixed(1),
+      is_anomaly: frpVal >= 80 || isIndustrial
+    });
+  }
 
   return detections;
 };
 
-const ALL_DETECTIONS = generateDenseDetections();
+const ALL_DETECTIONS = generateNationwideScatteredDetections();
 
 export default function App() {
   const [hideHud, setHideHud] = useState(false);
@@ -81,19 +102,18 @@ export default function App() {
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [selectedHotspot, setSelectedHotspot] = useState(ALL_DETECTIONS[0]);
 
-  // Clean Zero-Auth GIS Tile Server
+  // Zero-Auth High Reliability GIS Dark Tiles (No 401 QR errors)
   const tileUrls = {
     dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
     satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     osm: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
   };
 
-  // Distinct Classification Logic
   const getClassificationData = (hotspot) => {
     if (hotspot.facility_name && hotspot.facility_name !== 'None') {
       return {
         title: hotspot.facility_name,
-        type: 'Industrial Thermal Anomaly',
+        type: 'Industrial Thermal Flare / Anomaly',
         color: '#38BDF8'
       };
     }
@@ -111,12 +131,11 @@ export default function App() {
     };
   };
 
-  // Filtering Logic based on HUD
   const filteredHotspots = useMemo(() => {
     return ALL_DETECTIONS.filter(h => {
       if (satelliteSource === 'viirs' && !h.satellite.includes('VIIRS')) return false;
       if (satelliteSource === 'modis' && !h.satellite.includes('MODIS')) return false;
-      
+
       if (typeFilter === 'CRITICAL') return h.frp >= 80 || h.is_anomaly;
       if (typeFilter === 'INDUSTRIAL') return h.facility_name && h.facility_name !== 'None';
       if (typeFilter === 'WILDFIRE') return !h.facility_name || h.facility_name === 'None';
@@ -170,19 +189,17 @@ export default function App() {
           backgroundColor: '#090D16E6', backdropFilter: 'blur(10px)',
           border: '1px solid #1E293B', borderRadius: '8px', padding: '14px', zIndex: 1000, color: '#FFFFFF', fontSize: '11px'
         }}>
-          {/* Search */}
           <div style={{ marginBottom: '12px' }}>
             <div style={{ color: '#0284C7', fontWeight: 'bold', fontSize: '10px', marginBottom: '4px' }}>SEARCH LOCATION / PLANT HUB</div>
             <input 
               type="text" 
-              placeholder="Search Colombo, Jamnagar, UP..." 
+              placeholder="Search plant, region..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '4px', padding: '6px 8px', color: '#FFF', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
 
-          {/* GIS Base Tile Theme */}
           <div style={{ marginBottom: '12px' }}>
             <div style={{ color: '#94A3B8', fontWeight: 'bold', fontSize: '10px', marginBottom: '4px' }}>GIS BASE TILE THEME</div>
             <select 
@@ -196,7 +213,6 @@ export default function App() {
             </select>
           </div>
 
-          {/* Hologram Pulse Toggle */}
           <div style={{ marginBottom: '12px' }}>
             <button 
               onClick={() => setHologramPulse(!hologramPulse)}
@@ -206,7 +222,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* Satellite Source */}
           <div style={{ marginBottom: '12px' }}>
             <div style={{ color: '#94A3B8', fontWeight: 'bold', fontSize: '10px', marginBottom: '4px' }}>SATELLITE SOURCE</div>
             <select 
@@ -220,7 +235,6 @@ export default function App() {
             </select>
           </div>
 
-          {/* Orbit Time Window */}
           <div style={{ marginBottom: '12px' }}>
             <div style={{ color: '#94A3B8', fontWeight: 'bold', fontSize: '10px', marginBottom: '4px' }}>ORBIT TIME WINDOW</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px' }}>
@@ -245,7 +259,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Anomaly Type Filters */}
           <div style={{ marginBottom: '12px' }}>
             <div style={{ color: '#94A3B8', fontWeight: 'bold', fontSize: '10px', marginBottom: '4px' }}>ANOMALY TYPE FILTERS</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
@@ -265,25 +278,24 @@ export default function App() {
             </div>
           </div>
 
-          {/* Legend */}
           <div style={{ borderTop: '1px solid #1E293B', paddingTop: '8px', fontSize: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#EF4444' }}></span>
-              <span style={{ color: '#94A3B8' }}>Critical Anomaly / High FRP (&ge;80MW)</span>
-            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#38BDF8' }}></span>
               <span style={{ color: '#94A3B8' }}>Industrial Flare Buffer (&le;5km)</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#EF4444' }}></span>
+              <span style={{ color: '#94A3B8' }}>Dense Forest / Wildfire (&ge;60MW)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#F59E0B' }}></span>
-              <span style={{ color: '#94A3B8' }}>Vegetation / Open Terrain Fire</span>
+              <span style={{ color: '#94A3B8' }}>Agricultural / Stubble Fire (&lt;60MW)</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Target Telemetry Card (Bottom-Right) */}
+      {/* Target Telemetry Card (Bottom Right) */}
       {selectedHotspot && (
         <div style={{
           position: 'absolute', bottom: '20px', right: '20px', width: '280px',
@@ -296,7 +308,6 @@ export default function App() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            {/* Classification Field */}
             <div>
               <span style={{ color: '#94A3B8' }}>Classification: </span>
               <span style={{ fontWeight: 'bold', color: getClassificationData(selectedHotspot).color }}>
@@ -304,12 +315,11 @@ export default function App() {
               </span>
             </div>
 
-            {/* Nearest Facility (No more "None") */}
             <div>
               <span style={{ color: '#94A3B8' }}>Nearest Facility: </span>
               <span style={{ color: '#60A5FA' }}>
                 {selectedHotspot.facility_name && selectedHotspot.facility_name !== 'None'
-                  ? `${selectedHotspot.facility_name}`
+                  ? selectedHotspot.facility_name
                   : `Open Terrain (${selectedHotspot.region || 'Rural Plain'})`
                 }
               </span>
@@ -348,39 +358,16 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Tactical Map View */}
+      {/* Main Map */}
       <MapContainer 
-        center={[20.5937, 78.9629]} 
+        center={[21.0, 78.5]} 
         zoom={5} 
         zoomControl={false}
         style={{ width: '100%', height: '100%' }}
       >
         <TileLayer url={tileUrls[tileTheme] || tileUrls.dark} />
 
-        {/* Industrial Plants Base Layer */}
-        {STRATEGIC_PLANTS.map(plant => (
-          <CircleMarker
-            key={plant.id}
-            center={[plant.lat, plant.lng]}
-            radius={7}
-            pathOptions={{
-              color: '#38BDF8',
-              fillColor: '#0284C7',
-              fillOpacity: 0.9,
-              weight: 2
-            }}
-          >
-            <Popup>
-              <div style={{ color: '#0F172A', fontFamily: 'sans-serif', minWidth: '160px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#0284C7' }}>{plant.name}</div>
-                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Region: {plant.region}</div>
-                <div style={{ fontSize: '11px', color: '#059669', marginTop: '2px' }}>Geofence: 5.0 km Protected Hub</div>
-              </div>
-            </Popup>
-          </CircleMarker>
-        ))}
-
-        {/* Dense Satellite Fire Detections (2,142 Units with Full Popups & Click Handlers) */}
+        {/* Scattered Active Detections Layer (Every single dot has a working click + popup) */}
         {filteredHotspots.map((hotspot) => {
           const info = getClassificationData(hotspot);
           const isSelected = selectedHotspot?.id === hotspot.id;
@@ -389,11 +376,11 @@ export default function App() {
             <CircleMarker
               key={hotspot.id}
               center={[hotspot.lat, hotspot.lng]}
-              radius={isSelected ? 8 : (hotspot.frp >= 80 ? 5.5 : 4)}
+              radius={isSelected ? 8 : (hotspot.facility_name ? 5 : (hotspot.frp >= 60 ? 4.5 : 3.5))}
               pathOptions={{
                 color: isSelected ? '#FFFFFF' : info.color,
                 fillColor: info.color,
-                fillOpacity: isSelected ? 1.0 : (hologramPulse ? 0.8 : 0.6),
+                fillOpacity: isSelected ? 1.0 : (hologramPulse ? 0.85 : 0.65),
                 weight: isSelected ? 2.5 : 1
               }}
               eventHandlers={{
