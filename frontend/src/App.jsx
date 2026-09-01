@@ -10,16 +10,16 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-// Strategic Industrial Plants Registry (196 Top Tier-1 Sites across all Indian Zones)
+// Strategic Industrial Plants Registry (196 Top Tier-1 Sites across Real Industrial Corridors)
 const STRATEGIC_PLANTS = Array.from({ length: 196 }, (_, i) => {
   const baseHubs = [
     { name: 'Jamnagar Strategic Refinery', lat: 22.4707, lng: 70.0577, region: 'Gujarat Industrial Belt' },
     { name: 'Dahej Petrochemical Complex', lat: 21.7051, lng: 72.5855, region: 'Gujarat Coastal Belt' },
-    { name: 'Hazira LNG & Heavy Industry Hub', lat: 21.1121, lng: 72.6450, region: 'Western Zone' },
+    { name: 'Hazira Heavy Industry Hub', lat: 21.1121, lng: 72.6450, region: 'Western Zone' },
     { name: 'Mumbai Trombay Energy Corridor', lat: 19.0176, lng: 72.8561, region: 'Maharashtra Deccan' },
     { name: 'Singrauli Thermal Power Base', lat: 24.1997, lng: 82.6645, region: 'Central Thermal Belt' },
     { name: 'Korba Super Thermal Hub', lat: 22.3595, lng: 82.7501, region: 'Chhattisgarh Energy Belt' },
-    { name: 'Visakhapatnam Petroleum/LNG Port', lat: 17.6868, lng: 83.2185, region: 'Eastern Seaboard' },
+    { name: 'Visakhapatnam LNG Port & Refinery', lat: 17.6868, lng: 83.2185, region: 'Eastern Seaboard' },
     { name: 'Paradip Refinery & Petrochem Port', lat: 20.2644, lng: 86.6083, region: 'Odisha Industrial Zone' },
     { name: 'Haldia Petrochemical Complex', lat: 22.0667, lng: 88.0698, region: 'Eastern Industrial Zone' },
     { name: 'Mangalore Refinery & Petrochem (MRPL)', lat: 12.9141, lng: 74.8560, region: 'Karnataka Coast' },
@@ -27,70 +27,95 @@ const STRATEGIC_PLANTS = Array.from({ length: 196 }, (_, i) => {
     { name: 'Manali Industrial & Petrochem Hub', lat: 13.1673, lng: 80.2582, region: 'Tamil Nadu Coast' },
     { name: 'Barauni Petrochemical Center', lat: 25.4670, lng: 85.9678, region: 'Northern Plains' },
     { name: 'Panipat Strategic Petrochem Hub', lat: 29.3909, lng: 76.9635, region: 'Northern Industrial Belt' },
-    { name: 'Mathura Refinery & Petrochem', lat: 27.4924, lng: 77.6737, region: 'Yamuna Industrial Corridor' }
+    { name: 'Mathura Refinery Complex', lat: 27.4924, lng: 77.6737, region: 'Yamuna Industrial Corridor' },
+    { name: 'Nagpur Multi-Modal Cargo Hub', lat: 21.1458, lng: 79.0882, region: 'Vidarbha Industrial Belt' },
+    { name: 'Jamshedpur Heavy Steel Hub', lat: 22.8046, lng: 86.2029, region: 'Jharkhand Belt' },
+    { name: 'Rourkela Steel Complex', lat: 22.2604, lng: 84.8536, region: 'Odisha Belt' }
   ];
   const hub = baseHubs[i % baseHubs.length];
-  const offsetLat = ((i * 13) % 40 - 20) * 0.08;
-  const offsetLng = ((i * 19) % 40 - 20) * 0.08;
+  const randOffsetLat = ((i * 37) % 100 - 50) * 0.012;
+  const randOffsetLng = ((i * 41) % 100 - 50) * 0.012;
   return {
     id: `plant-${i + 1}`,
-    name: i < 15 ? hub.name : `Strategic Energy Asset ${i + 1} (${hub.name.split(' ')[0]})`,
-    lat: hub.lat + offsetLat,
-    lng: hub.lng + offsetLng,
+    name: i < 18 ? hub.name : `Strategic Energy Unit ${i + 1} (${hub.name.split(' ')[0]})`,
+    lat: hub.lat + randOffsetLat,
+    lng: hub.lng + randOffsetLng,
     region: hub.region,
     buffer_km: 5
   };
 });
 
-// Fully Scattered Telemetry Hotspots across entire Indian Mainland (No Isolated Clusters)
-const generateNationwideScatteredDetections = () => {
+// Accurate India Mainland Boundary Polygon
+const INDIA_POLYGON = [
+  [32.5, 74.8], [32.0, 76.5], [30.5, 78.5], [29.8, 80.2], [27.0, 88.0],
+  [26.5, 89.8], [24.0, 89.0], [22.0, 88.5], [21.5, 87.0], [19.5, 85.0],
+  [17.0, 82.5], [14.0, 80.2], [11.5, 79.8], [8.5, 77.5], [8.5, 76.8],
+  [10.5, 76.0], [13.0, 74.7], [15.5, 73.8], [19.0, 72.8], [21.0, 72.5],
+  [22.8, 69.5], [24.5, 68.8], [27.0, 70.5], [29.5, 72.0], [31.5, 73.5], [32.5, 74.8]
+];
+
+// Ray-Casting Point-in-Polygon Algorithm
+function isInsideIndia(lat, lng) {
+  let inside = false;
+  for (let i = 0, j = INDIA_POLYGON.length - 1; i < INDIA_POLYGON.length; j = i++) {
+    const xi = INDIA_POLYGON[i][0], yi = INDIA_POLYGON[i][1];
+    const xj = INDIA_POLYGON[j][0], yj = INDIA_POLYGON[j][1];
+    const intersect = ((yi > lng) !== (yj > lng)) && (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+// Pseudo-Random Seeded Scatter strictly bound to Landmass
+const generateLandlockedHotspots = () => {
   const detections = [];
-  const TOTAL_HOTSPOTS = 2142;
+  const TOTAL = 2142;
+  let count = 0;
+  let seed = 42;
 
-  // Real Indian geographical boundaries
-  const MIN_LAT = 8.8;
-  const MAX_LAT = 32.5;
-  const MIN_LNG = 69.5;
-  const MAX_LNG = 88.5;
+  const pseudoRandom = () => {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  };
 
-  for (let i = 0; i < TOTAL_HOTSPOTS; i++) {
+  while (count < TOTAL) {
     let lat, lng, isIndustrial = false, plantRef = null;
 
-    // 12% hotspots are specifically tied to 196 industrial plant chimneys / flares
-    if (i < Math.floor(TOTAL_HOTSPOTS * 0.12)) {
-      plantRef = STRATEGIC_PLANTS[i % STRATEGIC_PLANTS.length];
-      lat = plantRef.lat + (Math.random() - 0.5) * 0.06; // < 4km offset
-      lng = plantRef.lng + (Math.random() - 0.5) * 0.06;
+    if (count < 260) {
+      // Direct industrial heat points within 5km of 196 sites
+      plantRef = STRATEGIC_PLANTS[count % STRATEGIC_PLANTS.length];
+      lat = plantRef.lat + (pseudoRandom() - 0.5) * 0.05;
+      lng = plantRef.lng + (pseudoRandom() - 0.5) * 0.05;
       isIndustrial = true;
     } else {
-      // 88% hotspots are smoothly scattered across the entire Indian country
-      lat = MIN_LAT + Math.random() * (MAX_LAT - MIN_LAT);
-      lng = MIN_LNG + Math.random() * (MAX_LNG - MIN_LNG);
+      // Natural geographic scatter across Indian territory
+      lat = 8.5 + pseudoRandom() * 23.5;
+      lng = 69.0 + pseudoRandom() * 20.0;
     }
 
-    const frpVal = isIndustrial 
-      ? Math.floor(75 + Math.random() * 115) 
-      : Math.floor(20 + Math.random() * 95);
-
-    detections.push({
-      id: i + 1,
-      lat,
-      lng,
-      frp: frpVal,
-      brightness: Math.floor(305 + Math.random() * 55),
-      satellite: Math.random() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
-      time: `${String(Math.floor(Math.random() * 14) + 6).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')} UTC`,
-      region: plantRef ? plantRef.region : (lat > 23 ? 'Northern/Central Sector' : 'Southern/Peninsular Sector'),
-      facility_name: isIndustrial && plantRef ? plantRef.name : null,
-      offset_km: isIndustrial ? (Math.random() * 3.5 + 0.4).toFixed(1) : (Math.random() * 90 + 12).toFixed(1),
-      is_anomaly: frpVal >= 80 || isIndustrial
-    });
+    if (isInsideIndia(lat, lng)) {
+      const frpVal = isIndustrial ? Math.floor(75 + pseudoRandom() * 115) : Math.floor(18 + pseudoRandom() * 95);
+      detections.push({
+        id: count + 1,
+        lat,
+        lng,
+        frp: frpVal,
+        brightness: Math.floor(305 + pseudoRandom() * 55),
+        satellite: pseudoRandom() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
+        time: `${String(Math.floor(pseudoRandom() * 14) + 6).padStart(2, '0')}:${String(Math.floor(pseudoRandom() * 60)).padStart(2, '0')} UTC`,
+        region: plantRef ? plantRef.region : (lat > 22.5 ? (lng > 80 ? 'Eastern Corridor' : 'Northern Plains') : (lng > 78 ? 'Eastern Seaboard' : 'Deccan Plateau')),
+        facility_name: isIndustrial && plantRef ? plantRef.name : null,
+        offset_km: isIndustrial ? (pseudoRandom() * 3.5 + 0.4).toFixed(1) : (pseudoRandom() * 85 + 12).toFixed(1),
+        is_anomaly: frpVal >= 80 || isIndustrial
+      });
+      count++;
+    }
   }
 
   return detections;
 };
 
-const ALL_DETECTIONS = generateNationwideScatteredDetections();
+const ALL_DETECTIONS = generateLandlockedHotspots();
 
 export default function App() {
   const [hideHud, setHideHud] = useState(false);
@@ -102,7 +127,7 @@ export default function App() {
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [selectedHotspot, setSelectedHotspot] = useState(ALL_DETECTIONS[0]);
 
-  // Zero-Auth High Reliability GIS Dark Tiles (No 401 QR errors)
+  // Clean Zero-Auth GIS Dark Tiles
   const tileUrls = {
     dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
     satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -135,7 +160,6 @@ export default function App() {
     return ALL_DETECTIONS.filter(h => {
       if (satelliteSource === 'viirs' && !h.satellite.includes('VIIRS')) return false;
       if (satelliteSource === 'modis' && !h.satellite.includes('MODIS')) return false;
-
       if (typeFilter === 'CRITICAL') return h.frp >= 80 || h.is_anomaly;
       if (typeFilter === 'INDUSTRIAL') return h.facility_name && h.facility_name !== 'None';
       if (typeFilter === 'WILDFIRE') return !h.facility_name || h.facility_name === 'None';
@@ -289,13 +313,13 @@ export default function App() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#F59E0B' }}></span>
-              <span style={{ color: '#94A3B8' }}>Agricultural / Stubble Fire (&lt;60MW)</span>
+              <span style={{ color: '#94A3B8' }}>Agricultural Stubble Fire (&lt;60MW)</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Target Telemetry Card (Bottom Right) */}
+      {/* Target Telemetry Card */}
       {selectedHotspot && (
         <div style={{
           position: 'absolute', bottom: '20px', right: '20px', width: '280px',
@@ -358,16 +382,16 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Map */}
+      {/* Map Canvas */}
       <MapContainer 
-        center={[21.0, 78.5]} 
+        center={[20.5937, 78.9629]} 
         zoom={5} 
         zoomControl={false}
         style={{ width: '100%', height: '100%' }}
       >
         <TileLayer url={tileUrls[tileTheme] || tileUrls.dark} />
 
-        {/* Scattered Active Detections Layer (Every single dot has a working click + popup) */}
+        {/* 2,142 Active Hotspots strictly landlocked across India */}
         {filteredHotspots.map((hotspot) => {
           const info = getClassificationData(hotspot);
           const isSelected = selectedHotspot?.id === hotspot.id;
