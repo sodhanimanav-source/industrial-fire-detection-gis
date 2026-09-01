@@ -10,10 +10,10 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-// NASA FIRMS Map Key
-const NASA_MAP_KEY = 'f6ca5e328ec33b4632c74dcec9dbda4b';
+// NASA FIRMS Map Key (Apni key yahan rakhein)
+const NASA_MAP_KEY = 'YOUR_NASA_MAP_KEY';
 
-// Strategic Industrial Plants (196+ Strategic Defense & Industrial Focus Units)
+// Strategic Industrial Facilities (196+ Strategic Defense & Industrial Focus Units)
 const STRATEGIC_PLANTS = Array.from({ length: 210 }, (_, i) => {
   const baseHubs = [
     { name: 'Jamnagar Strategic Refinery Complex', lat: 22.4707, lng: 70.0577, region: 'Gujarat Industrial Belt' },
@@ -42,11 +42,11 @@ const STRATEGIC_PLANTS = Array.from({ length: 210 }, (_, i) => {
     lat: hub.lat + (((i * 17) % 60 - 30) * 0.02),
     lng: hub.lng + (((i * 23) % 60 - 30) * 0.02),
     region: hub.region,
-    buffer_km: 5
+    buffer_km: 15
   };
 });
 
-// Calculate Distance in KM
+// Great-Circle Distance Calculation
 const getDistKm = (lat1, lon1, lat2, lon2) => {
   const R = 6371;
   const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -57,20 +57,17 @@ const getDistKm = (lat1, lon1, lat2, lon2) => {
   return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 };
 
-// High-Density Nationwide Hotspots Generator (2,500+ Detections across India & Sri Lanka)
+// High-Density Fallback Telemetry (2,540 points covering India + Sri Lanka)
 const generateDenseNationwideHotspots = () => {
   const detections = [];
   const TOTAL = 2540;
 
   const anchors = [
-    // Sri Lanka Coverage
     { lat: 6.9271, lng: 79.8612, region: 'Western Province (Sri Lanka)' },
     { lat: 7.2906, lng: 80.6337, region: 'Central Highlands (Sri Lanka)' },
     { lat: 9.6615, lng: 80.0255, region: 'Jaffna Sector (Sri Lanka)' },
     { lat: 8.5874, lng: 81.2152, region: 'Trincomalee Sector (Sri Lanka)' },
     { lat: 6.1248, lng: 81.1213, region: 'Southern Province (Sri Lanka)' },
-
-    // India Zones
     { lat: 30.7, lng: 75.8, region: 'Punjab/Haryana Agricultural Belt' },
     { lat: 28.6, lng: 77.2, region: 'Delhi NCR & Western UP' },
     { lat: 26.8, lng: 81.0, region: 'Uttar Pradesh Central Plains' },
@@ -107,8 +104,18 @@ const generateDenseNationwideHotspots = () => {
       const lat = anchor.lat + spreadLat;
       const lng = anchor.lng + spreadLng;
 
-      const isIndustrial = Math.random() < 0.12;
-      const plant = isIndustrial ? STRATEGIC_PLANTS[id % STRATEGIC_PLANTS.length] : null;
+      // Match against nearest plant within 15 km
+      let nearestPlant = null;
+      let minDist = 9999;
+      STRATEGIC_PLANTS.forEach(plant => {
+        const d = getDistKm(lat, lng, plant.lat, plant.lng);
+        if (d < minDist) {
+          minDist = d;
+          nearestPlant = plant;
+        }
+      });
+
+      const isIndustrial = minDist <= 15.0;
       const frpVal = isIndustrial ? Math.floor(75 + Math.random() * 115) : Math.floor(18 + Math.random() * 95);
 
       detections.push({
@@ -119,9 +126,9 @@ const generateDenseNationwideHotspots = () => {
         brightness: Math.floor(305 + Math.random() * 55),
         satellite: Math.random() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
         time: `${String(Math.floor(Math.random() * 14) + 6).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')} UTC`,
-        region: plant ? plant.region : anchor.region,
-        facility_name: isIndustrial && plant ? plant.name : null,
-        offset_km: isIndustrial ? (Math.random() * 3.5 + 0.4).toFixed(1) : (Math.random() * 85 + 12).toFixed(1),
+        region: nearestPlant ? nearestPlant.region : anchor.region,
+        facility_name: isIndustrial ? nearestPlant.name : null,
+        offset_km: minDist.toFixed(1),
         is_anomaly: frpVal >= 80 || isIndustrial
       });
     }
@@ -144,13 +151,14 @@ export default function App() {
   const [selectedHotspot, setSelectedHotspot] = useState(DEFAULT_DETECTIONS[0]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Reliable Map Tile Providers
   const tileUrls = {
     dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
     satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     osm: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
   };
 
-  // Real NASA FIRMS Fetcher (South Asia Bounding Box: 68W, 5S, 90E, 37N)
+  // NASA FIRMS Live Telemetry Fetcher
   useEffect(() => {
     const fetchNASAData = async () => {
       if (!NASA_MAP_KEY || NASA_MAP_KEY === 'YOUR_NASA_MAP_KEY') {
@@ -184,6 +192,7 @@ export default function App() {
             const brightness = parseFloat(cols[brightIdx]) || 310.0;
             const timeStr = cols[timeIdx] ? `${cols[timeIdx].slice(0, 2)}:${cols[timeIdx].slice(2, 4)} UTC` : '12:00 UTC';
 
+            // Geofence against 196+ Industrial Plants (Corridor radius = 15km)
             let nearestPlant = null;
             let minDist = 9999;
             STRATEGIC_PLANTS.forEach(plant => {
@@ -194,7 +203,7 @@ export default function App() {
               }
             });
 
-            const isIndustrial = minDist <= 5.0;
+            const isIndustrial = minDist <= 15.0;
 
             return {
               id: idx + 1,
@@ -226,10 +235,12 @@ export default function App() {
     fetchNASAData();
   }, [satelliteSource, timeWindow]);
 
+  // Classification Logic
   const getClassificationData = (hotspot) => {
-    if (hotspot.facility_name && hotspot.facility_name !== 'None') {
+    const offset = parseFloat(hotspot.offset_km || 999);
+    if ((hotspot.facility_name && hotspot.facility_name !== 'None') || offset <= 15.0) {
       return {
-        title: hotspot.facility_name,
+        title: hotspot.facility_name || 'Industrial Corridor Anomaly',
         type: 'Industrial Thermal Flare / Anomaly',
         color: '#38BDF8'
       };
@@ -248,11 +259,15 @@ export default function App() {
     };
   };
 
+  // Tactical Filter Logic (All, Critical, Industrial, Wildfire)
   const filteredHotspots = useMemo(() => {
     return hotspots.filter(h => {
+      const offset = parseFloat(h.offset_km || 999);
+      const isInd = (h.facility_name && h.facility_name !== 'None') || offset <= 15.0;
+
       if (typeFilter === 'CRITICAL') return h.frp >= 80 || h.is_anomaly;
-      if (typeFilter === 'INDUSTRIAL') return h.facility_name && h.facility_name !== 'None';
-      if (typeFilter === 'WILDFIRE') return !h.facility_name || h.facility_name === 'None';
+      if (typeFilter === 'INDUSTRIAL') return isInd;
+      if (typeFilter === 'WILDFIRE') return !isInd;
       return true;
     });
   }, [hotspots, typeFilter]);
@@ -395,7 +410,7 @@ export default function App() {
           <div style={{ borderTop: '1px solid #1E293B', paddingTop: '8px', fontSize: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#38BDF8' }}></span>
-              <span style={{ color: '#94A3B8' }}>Industrial Flare Buffer (&le;5km)</span>
+              <span style={{ color: '#94A3B8' }}>Industrial Flare Buffer (&le;15km)</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#EF4444' }}></span>
@@ -481,7 +496,6 @@ export default function App() {
       >
         <TileLayer url={tileUrls[tileTheme] || tileUrls.dark} />
 
-        {/* 2,500+ Detections with smooth tooltips */}
         {filteredHotspots.map((hotspot) => {
           const info = getClassificationData(hotspot);
           const isSelected = selectedHotspot?.id === hotspot.id;
@@ -490,7 +504,7 @@ export default function App() {
             <CircleMarker
               key={hotspot.id}
               center={[hotspot.lat, hotspot.lng]}
-              radius={isSelected ? 7 : (hotspot.facility_name ? 4.5 : 3.2)}
+              radius={isSelected ? 7 : (info.type.includes('Industrial') ? 4.5 : 3.2)}
               pathOptions={{
                 color: isSelected ? '#FFFFFF' : info.color,
                 fillColor: info.color,
