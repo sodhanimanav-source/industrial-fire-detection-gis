@@ -10,7 +10,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-// Strategic Industrial Plants Registry (196 Strategic Facilities)
+// Strategic Industrial Plants Registry (196 Strategic Facilities + Sri Lanka Ports/Refineries)
 const STRATEGIC_PLANTS = Array.from({ length: 196 }, (_, i) => {
   const baseHubs = [
     { name: 'Jamnagar Strategic Refinery', lat: 22.4707, lng: 70.0577, region: 'Gujarat Industrial Belt' },
@@ -27,77 +27,90 @@ const STRATEGIC_PLANTS = Array.from({ length: 196 }, (_, i) => {
     { name: 'Manali Industrial & Petrochem Hub', lat: 13.1673, lng: 80.2582, region: 'Tamil Nadu Coast' },
     { name: 'Barauni Petrochemical Center', lat: 25.4670, lng: 85.9678, region: 'Northern Plains' },
     { name: 'Panipat Strategic Petrochem Hub', lat: 29.3909, lng: 76.9635, region: 'Northern Industrial Belt' },
-    { name: 'Mathura Refinery Complex', lat: 27.4924, lng: 77.6737, region: 'Yamuna Industrial Corridor' }
+    { name: 'Mathura Refinery Complex', lat: 27.4924, lng: 77.6737, region: 'Yamuna Industrial Corridor' },
+    { name: 'Sapugaskanda Refinery Complex (CPC)', lat: 6.9658, lng: 79.9489, region: 'Western Province (Sri Lanka)' },
+    { name: 'Hambantota International Port & Tank Farm', lat: 6.1248, lng: 81.1213, region: 'Southern Sri Lanka' },
+    { name: 'Trincomalee Petroleum Terminal', lat: 8.5711, lng: 81.2335, region: 'Eastern Sri Lanka' }
   ];
   const hub = baseHubs[i % baseHubs.length];
   return {
     id: `plant-${i + 1}`,
-    name: i < 15 ? hub.name : `Strategic Energy Unit ${i + 1} (${hub.name.split(' ')[0]})`,
-    lat: hub.lat + (((i * 17) % 50 - 25) * 0.03),
-    lng: hub.lng + (((i * 23) % 50 - 25) * 0.03),
+    name: i < 18 ? hub.name : `Strategic Energy Unit ${i + 1} (${hub.name.split(' ')[0]})`,
+    lat: hub.lat + (((i * 17) % 50 - 25) * 0.025),
+    lng: hub.lng + (((i * 23) % 50 - 25) * 0.025),
     region: hub.region,
     buffer_km: 5
   };
 });
 
-// Real Nationwide Spatial Points Covering All States (Zero Box / Zero Water Spill)
-const INDIAN_STATES_ANCHORS = [
-  // North
-  { lat: 31.1, lng: 75.3, region: 'Punjab Farmlands' },
-  { lat: 29.5, lng: 76.8, region: 'Haryana Belt' },
-  { lat: 27.2, lng: 79.5, region: 'Uttar Pradesh Central' },
-  { lat: 26.8, lng: 82.2, region: 'Eastern Uttar Pradesh' },
-  { lat: 27.5, lng: 74.2, region: 'Rajasthan Desert/Agri' },
-  { lat: 25.8, lng: 75.8, region: 'Rajasthan East' },
-  // Central
-  { lat: 23.2, lng: 77.4, region: 'Madhya Pradesh (Bhopal/Vidisha)' },
-  { lat: 22.7, lng: 75.8, region: 'Malwa Plateau (Indore)' },
-  { lat: 23.8, lng: 79.9, region: 'Jabalpur Thermal Zone' },
-  { lat: 24.5, lng: 81.3, region: 'Rewa Vindhya Region' },
-  { lat: 21.8, lng: 82.1, region: 'Chhattisgarh Plains' },
-  { lat: 22.8, lng: 83.2, region: 'Korba Energy Corridor' },
-  // West
-  { lat: 22.3, lng: 71.8, region: 'Saurashtra Plain' },
-  { lat: 23.0, lng: 72.6, region: 'Ahmedabad/Gandhinagar Hub' },
-  { lat: 21.2, lng: 73.0, region: 'South Gujarat Belt' },
-  { lat: 19.8, lng: 75.3, region: 'Marathwada Central' },
-  { lat: 20.9, lng: 77.7, region: 'Vidarbha Region' },
-  { lat: 18.5, lng: 74.3, region: 'Western Maharashtra' },
-  // East
-  { lat: 25.6, lng: 85.1, region: 'Bihar Gangetic Plain' },
-  { lat: 23.6, lng: 85.5, region: 'Jharkhand Chota Nagpur' },
-  { lat: 22.9, lng: 87.8, region: 'West Bengal Delta' },
-  { lat: 20.8, lng: 85.5, region: 'Odisha Central Belt' },
-  { lat: 19.8, lng: 84.8, region: 'Odisha Coastal Plain' },
-  // South
-  { lat: 17.4, lng: 78.5, region: 'Telangana Deccan' },
-  { lat: 16.5, lng: 80.6, region: 'Andhra Coastal Corridor' },
-  { lat: 14.8, lng: 77.6, region: 'Rayalaseema Region' },
-  { lat: 14.2, lng: 75.8, region: 'Karnataka Central' },
-  { lat: 12.9, lng: 76.5, region: 'South Karnataka Belt' },
-  { lat: 11.0, lng: 78.6, region: 'Tamil Nadu Central' },
-  { lat: 9.9, lng: 78.1, region: 'Madurai Southern Plains' },
-  { lat: 10.5, lng: 76.6, region: 'Kerala Palakkad Gap' }
+// Full Regional Anchors (India Mainland + Sri Lanka Sector)
+const REGIONAL_ANCHORS = [
+  // Sri Lanka
+  { lat: 6.9271, lng: 79.8612, region: 'Colombo Industrial Corridor (Sri Lanka)' },
+  { lat: 7.2906, lng: 80.6337, region: 'Central Highlands / Kandy (Sri Lanka)' },
+  { lat: 9.6615, lng: 80.0255, region: 'Jaffna Northern Peninsula (Sri Lanka)' },
+  { lat: 8.5874, lng: 81.2152, region: 'Trincomalee Coastal Zone (Sri Lanka)' },
+  { lat: 6.0535, lng: 80.2210, region: 'Galle Southern Sector (Sri Lanka)' },
+  { lat: 6.1248, lng: 81.1213, region: 'Hambantota Deep Sea Zone (Sri Lanka)' },
+  { lat: 8.3114, lng: 80.4037, region: 'Anuradhapura Agricultural Plain (Sri Lanka)' },
+
+  // South India
+  { lat: 8.5241, lng: 76.9366, region: 'Thiruvananthapuram Southern Sector' },
+  { lat: 9.9252, lng: 78.1198, region: 'Madurai Plains' },
+  { lat: 10.7867, lng: 76.6548, region: 'Kerala Palakkad Belt' },
+  { lat: 11.0168, lng: 76.9558, region: 'Coimbatore Industrial Belt' },
+  { lat: 13.0827, lng: 80.2707, region: 'Chennai Urban & Industrial Belt' },
+  { lat: 12.9716, lng: 77.5946, region: 'Bengaluru Tech Corridor' },
+  { lat: 14.4426, lng: 75.9212, region: 'Central Karnataka Region' },
+  { lat: 15.3647, lng: 75.1240, region: 'Hubli-Dharwad Sector' },
+  { lat: 16.5062, lng: 80.6480, region: 'Vijayawada Andhra Plain' },
+  { lat: 17.3850, lng: 78.4867, region: 'Telangana Deccan Plateau' },
+
+  // West & Central
+  { lat: 19.0760, lng: 72.8777, region: 'Mumbai MMR & Konkan Belt' },
+  { lat: 18.5204, lng: 73.8567, region: 'Pune Industrial Area' },
+  { lat: 19.8762, lng: 75.3433, region: 'Chhatrapati Sambhajinagar Marathwada' },
+  { lat: 21.1458, lng: 79.0882, region: 'Nagpur Vidarbha Region' },
+  { lat: 21.1702, lng: 72.8311, region: 'Surat & South Gujarat' },
+  { lat: 22.3072, lng: 73.1812, region: 'Vadodara Petro Corridor' },
+  { lat: 22.3039, lng: 70.8022, region: 'Saurashtra Plain' },
+  { lat: 22.7196, lng: 75.8577, region: 'Indore Malwa Region' },
+  { lat: 23.2599, lng: 77.4126, region: 'Bhopal Central MP' },
+  { lat: 23.1815, lng: 79.9864, region: 'Jabalpur Energy Corridor' },
+  { lat: 21.2514, lng: 81.6296, region: 'Raipur Chhattisgarh Plain' },
+
+  // East & North
+  { lat: 22.5726, lng: 88.3639, region: 'Kolkata Delta Region' },
+  { lat: 20.2961, lng: 85.8245, region: 'Bhubaneswar Odisha Zone' },
+  { lat: 23.3441, lng: 85.3096, region: 'Ranchi Chota Nagpur' },
+  { lat: 25.5941, lng: 85.1376, region: 'Patna Bihar Gangetic Plain' },
+  { lat: 26.8467, lng: 80.9462, region: 'Lucknow Awadh Plain' },
+  { lat: 26.4499, lng: 80.3319, region: 'Kanpur Industrial Belt' },
+  { lat: 27.1767, lng: 78.0081, region: 'Agra Yamuna Corridor' },
+  { lat: 28.7041, lng: 77.1025, region: 'Delhi NCR Metropolitan' },
+  { lat: 26.9124, lng: 75.7873, region: 'Jaipur East Rajasthan' },
+  { lat: 26.2389, lng: 73.0243, region: 'Jodhpur West Plain' },
+  { lat: 30.7333, lng: 76.7794, region: 'Punjab / Chandigarh Agricultural Belt' },
+  { lat: 31.6340, lng: 74.8723, region: 'Amritsar Border Plain' }
 ];
 
-// Generate Smooth Nationwide Scatter
-const generateEvenlyScatteredHotspots = () => {
+// Naturally Scatter 2,142 Hotspots Evenly (Covering India + Sri Lanka)
+const generateFullRegionalDetections = () => {
   const detections = [];
   const TOTAL = 2142;
-  const perAnchor = Math.ceil(TOTAL / INDIAN_STATES_ANCHORS.length);
+  const perAnchor = Math.ceil(TOTAL / REGIONAL_ANCHORS.length);
   let id = 1;
 
-  INDIAN_STATES_ANCHORS.forEach((anchor) => {
+  REGIONAL_ANCHORS.forEach((anchor) => {
     for (let i = 0; i < perAnchor; i++) {
       if (id > TOTAL) break;
 
-      // Natural continuous dispersion
-      const spreadLat = (Math.random() - 0.5) * 2.2;
-      const spreadLng = (Math.random() - 0.5) * 2.2;
+      const spreadLat = (Math.random() - 0.5) * 1.6;
+      const spreadLng = (Math.random() - 0.5) * 1.6;
       const lat = anchor.lat + spreadLat;
       const lng = anchor.lng + spreadLng;
 
-      const isIndustrial = Math.random() < 0.1;
+      const isIndustrial = Math.random() < 0.11;
       const plant = isIndustrial ? STRATEGIC_PLANTS[id % STRATEGIC_PLANTS.length] : null;
       const frpVal = isIndustrial ? Math.floor(75 + Math.random() * 110) : Math.floor(18 + Math.random() * 95);
 
@@ -120,7 +133,7 @@ const generateEvenlyScatteredHotspots = () => {
   return detections;
 };
 
-const ALL_DETECTIONS = generateEvenlyScatteredHotspots();
+const ALL_DETECTIONS = generateFullRegionalDetections();
 
 export default function App() {
   const [hideHud, setHideHud] = useState(false);
@@ -132,7 +145,7 @@ export default function App() {
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [selectedHotspot, setSelectedHotspot] = useState(ALL_DETECTIONS[0]);
 
-  // Clean Zero-Auth GIS Dark Tiles
+  // Zero-Auth High Reliability Dark GIS Tiles
   const tileUrls = {
     dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
     satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -202,7 +215,7 @@ export default function App() {
           </div>
           <div style={{ backgroundColor: '#0F172A', padding: '4px 10px', borderRadius: '4px', border: '1px solid #1E293B' }}>
             <span style={{ color: '#94A3B8' }}>ACTIVE DETECTIONS: </span>
-            <span style={{ color: '#EF4444', fontWeight: 'bold' }}>2,142</span>
+            <span style={{ color: '#EF4444', fontWeight: 'bold' }}>{filteredHotspots.length}</span>
           </div>
           <div style={{ backgroundColor: '#0F172A', padding: '4px 10px', borderRadius: '4px', border: '1px solid #1E293B' }}>
             <span style={{ color: '#94A3B8' }}>STATUS: </span>
@@ -222,7 +235,7 @@ export default function App() {
             <div style={{ color: '#0284C7', fontWeight: 'bold', fontSize: '10px', marginBottom: '4px' }}>SEARCH LOCATION / PLANT HUB</div>
             <input 
               type="text" 
-              placeholder="Search plant, region..." 
+              placeholder="Search Colombo, Jamnagar, UP..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '4px', padding: '6px 8px', color: '#FFF', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
@@ -387,16 +400,15 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Map */}
+      {/* Main Map Centered to cover India & Sri Lanka seamlessly */}
       <MapContainer 
-        center={[21.0, 78.5]} 
+        center={[18.5, 79.5]} 
         zoom={5} 
         zoomControl={false}
         style={{ width: '100%', height: '100%' }}
       >
         <TileLayer url={tileUrls[tileTheme] || tileUrls.dark} />
 
-        {/* Dynamic Evenly-Distributed Hotspots */}
         {filteredHotspots.map((hotspot) => {
           const info = getClassificationData(hotspot);
           const isSelected = selectedHotspot?.id === hotspot.id;
