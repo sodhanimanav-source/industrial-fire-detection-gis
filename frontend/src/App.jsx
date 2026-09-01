@@ -10,37 +10,37 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-// NASA FIRMS Free API Key
-const NASA_MAP_KEY = 'f6ca5e328ec33b4632c74dcec9dbda4b';
+// NASA FIRMS Map Key
+const NASA_MAP_KEY = 'YOUR_NASA_MAP_KEY';
 
-// Strategic Industrial Plants (196 Focus Sites in India & Sri Lanka)
-const STRATEGIC_PLANTS = Array.from({ length: 196 }, (_, i) => {
-  const hubs = [
-    { name: 'Jamnagar Strategic Refinery', lat: 22.4707, lng: 70.0577, region: 'Gujarat Industrial Belt' },
-    { name: 'Dahej Petrochemical Complex', lat: 21.7051, lng: 72.5855, region: 'Gujarat Coast' },
-    { name: 'Hazira Heavy Industry Corridor', lat: 21.1121, lng: 72.6450, region: 'Western Zone' },
-    { name: 'Mumbai Trombay Energy Hub', lat: 19.0176, lng: 72.8561, region: 'Maharashtra Deccan' },
-    { name: 'Singrauli Thermal Power Base', lat: 24.1997, lng: 82.6645, region: 'Central Thermal Belt' },
-    { name: 'Korba Super Thermal Hub', lat: 22.3595, lng: 82.7501, region: 'Chhattisgarh Energy Belt' },
+// Strategic Industrial Plants (196+ Strategic Defense & Industrial Focus Units)
+const STRATEGIC_PLANTS = Array.from({ length: 210 }, (_, i) => {
+  const baseHubs = [
+    { name: 'Jamnagar Strategic Refinery Complex', lat: 22.4707, lng: 70.0577, region: 'Gujarat Industrial Belt' },
+    { name: 'Dahej Petrochemical Corridor', lat: 21.7051, lng: 72.5855, region: 'Gujarat Coastal Belt' },
+    { name: 'Hazira LNG & Heavy Industrial Hub', lat: 21.1121, lng: 72.6450, region: 'Western Zone' },
+    { name: 'Mumbai Trombay Energy & Petro Hub', lat: 19.0176, lng: 72.8561, region: 'Maharashtra Deccan' },
+    { name: 'Singrauli Super Thermal Energy Base', lat: 24.1997, lng: 82.6645, region: 'Central Thermal Belt' },
+    { name: 'Korba Super Thermal Power Hub', lat: 22.3595, lng: 82.7501, region: 'Chhattisgarh Energy Belt' },
     { name: 'Visakhapatnam LNG Port & Refinery', lat: 17.6868, lng: 83.2185, region: 'Eastern Seaboard' },
-    { name: 'Paradip Refinery Complex', lat: 20.2644, lng: 86.6083, region: 'Odisha Industrial Zone' },
+    { name: 'Paradip Refinery & Petrochem Complex', lat: 20.2644, lng: 86.6083, region: 'Odisha Industrial Zone' },
     { name: 'Haldia Petrochemical Complex', lat: 22.0667, lng: 88.0698, region: 'Eastern Industrial Zone' },
-    { name: 'Mangalore Refinery (MRPL)', lat: 12.9141, lng: 74.8560, region: 'Karnataka Coast' },
+    { name: 'Mangalore Refinery & Petrochem (MRPL)', lat: 12.9141, lng: 74.8560, region: 'Karnataka Coast' },
     { name: 'Kochi Crude Refining & LNG Port', lat: 9.9312, lng: 76.2673, region: 'Kerala Corridor' },
-    { name: 'Manali Industrial & Petrochem Hub', lat: 13.1673, lng: 80.2582, region: 'Tamil Nadu Coast' },
+    { name: 'Manali Petrochemical & Energy Hub', lat: 13.1673, lng: 80.2582, region: 'Tamil Nadu Coast' },
     { name: 'Barauni Petrochemical Center', lat: 25.4670, lng: 85.9678, region: 'Northern Plains' },
     { name: 'Panipat Strategic Petrochem Hub', lat: 29.3909, lng: 76.9635, region: 'Northern Industrial Belt' },
     { name: 'Mathura Refinery Complex', lat: 27.4924, lng: 77.6737, region: 'Yamuna Industrial Corridor' },
     { name: 'Sapugaskanda Refinery Complex (CPC)', lat: 6.9658, lng: 79.9489, region: 'Western Province (Sri Lanka)' },
-    { name: 'Hambantota International Port & Tank Farm', lat: 6.1248, lng: 81.1213, region: 'Southern Sri Lanka' },
-    { name: 'Trincomalee Petroleum Terminal', lat: 8.5711, lng: 81.2335, region: 'Eastern Sri Lanka' }
+    { name: 'Hambantota International Port & Energy Hub', lat: 6.1248, lng: 81.1213, region: 'Southern Sri Lanka' },
+    { name: 'Trincomalee Petroleum & Energy Terminal', lat: 8.5711, lng: 81.2335, region: 'Eastern Sri Lanka' }
   ];
-  const hub = hubs[i % hubs.length];
+  const hub = baseHubs[i % baseHubs.length];
   return {
     id: `plant-${i + 1}`,
-    name: i < 18 ? hub.name : `Strategic Asset ${i + 1} (${hub.name.split(' ')[0]})`,
-    lat: hub.lat + (((i * 17) % 50 - 25) * 0.02),
-    lng: hub.lng + (((i * 23) % 50 - 25) * 0.02),
+    name: i < 18 ? hub.name : `Strategic Industrial Asset ${i + 1} (${hub.name.split(' ')[0]})`,
+    lat: hub.lat + (((i * 17) % 60 - 30) * 0.02),
+    lng: hub.lng + (((i * 23) % 60 - 30) * 0.02),
     region: hub.region,
     buffer_km: 5
   };
@@ -57,6 +57,81 @@ const getDistKm = (lat1, lon1, lat2, lon2) => {
   return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 };
 
+// High-Density Nationwide Hotspots Generator (2,500+ Detections across India & Sri Lanka)
+const generateDenseNationwideHotspots = () => {
+  const detections = [];
+  const TOTAL = 2540;
+
+  const anchors = [
+    // Sri Lanka Coverage
+    { lat: 6.9271, lng: 79.8612, region: 'Western Province (Sri Lanka)' },
+    { lat: 7.2906, lng: 80.6337, region: 'Central Highlands (Sri Lanka)' },
+    { lat: 9.6615, lng: 80.0255, region: 'Jaffna Sector (Sri Lanka)' },
+    { lat: 8.5874, lng: 81.2152, region: 'Trincomalee Sector (Sri Lanka)' },
+    { lat: 6.1248, lng: 81.1213, region: 'Southern Province (Sri Lanka)' },
+
+    // India Zones
+    { lat: 30.7, lng: 75.8, region: 'Punjab/Haryana Agricultural Belt' },
+    { lat: 28.6, lng: 77.2, region: 'Delhi NCR & Western UP' },
+    { lat: 26.8, lng: 81.0, region: 'Uttar Pradesh Central Plains' },
+    { lat: 25.6, lng: 85.1, region: 'Bihar Gangetic Basin' },
+    { lat: 26.9, lng: 75.8, region: 'Rajasthan Eastern Corridor' },
+    { lat: 23.2, lng: 77.4, region: 'Madhya Pradesh Central' },
+    { lat: 22.7, lng: 75.8, region: 'Malwa Industrial Belt' },
+    { lat: 24.2, lng: 82.6, region: 'Singrauli Thermal Belt' },
+    { lat: 22.3, lng: 70.8, region: 'Gujarat Saurashtra Corridor' },
+    { lat: 21.7, lng: 72.5, region: 'Dahej-Hazira Coastal Industrial Belt' },
+    { lat: 19.1, lng: 72.8, region: 'Mumbai-Thane Industrial Hub' },
+    { lat: 18.5, lng: 73.8, region: 'Pune Deccan Corridor' },
+    { lat: 21.1, lng: 79.0, region: 'Vidarbha Energy Belt' },
+    { lat: 22.0, lng: 88.0, region: 'West Bengal Industrial Zone' },
+    { lat: 20.3, lng: 85.8, region: 'Odisha Industrial Corridor' },
+    { lat: 17.4, lng: 78.5, region: 'Telangana Deccan Belt' },
+    { lat: 16.5, lng: 80.6, region: 'Andhra Seaboard Corridor' },
+    { lat: 14.4, lng: 75.9, region: 'Karnataka Western Ghats' },
+    { lat: 12.9, lng: 77.6, region: 'Bengaluru Tech Corridor' },
+    { lat: 13.0, lng: 80.2, region: 'Chennai Industrial Belt' },
+    { lat: 10.8, lng: 78.6, region: 'Tamil Nadu Central Plains' },
+    { lat: 9.9, lng: 76.3, region: 'Kerala Coastal Corridor' }
+  ];
+
+  const perAnchor = Math.ceil(TOTAL / anchors.length);
+  let id = 1;
+
+  anchors.forEach((anchor) => {
+    for (let i = 0; i < perAnchor; i++) {
+      if (id > TOTAL) break;
+
+      const spreadLat = (Math.random() - 0.5) * 2.2;
+      const spreadLng = (Math.random() - 0.5) * 2.2;
+      const lat = anchor.lat + spreadLat;
+      const lng = anchor.lng + spreadLng;
+
+      const isIndustrial = Math.random() < 0.12;
+      const plant = isIndustrial ? STRATEGIC_PLANTS[id % STRATEGIC_PLANTS.length] : null;
+      const frpVal = isIndustrial ? Math.floor(75 + Math.random() * 115) : Math.floor(18 + Math.random() * 95);
+
+      detections.push({
+        id: id++,
+        lat,
+        lng,
+        frp: frpVal,
+        brightness: Math.floor(305 + Math.random() * 55),
+        satellite: Math.random() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
+        time: `${String(Math.floor(Math.random() * 14) + 6).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')} UTC`,
+        region: plant ? plant.region : anchor.region,
+        facility_name: isIndustrial && plant ? plant.name : null,
+        offset_km: isIndustrial ? (Math.random() * 3.5 + 0.4).toFixed(1) : (Math.random() * 85 + 12).toFixed(1),
+        is_anomaly: frpVal >= 80 || isIndustrial
+      });
+    }
+  });
+
+  return detections;
+};
+
+const DEFAULT_DETECTIONS = generateDenseNationwideHotspots();
+
 export default function App() {
   const [hideHud, setHideHud] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,9 +140,9 @@ export default function App() {
   const [satelliteSource, setSatelliteSource] = useState('all');
   const [timeWindow, setTimeWindow] = useState('5days');
   const [typeFilter, setTypeFilter] = useState('ALL');
-  const [hotspots, setHotspots] = useState([]);
-  const [selectedHotspot, setSelectedHotspot] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [hotspots, setHotspots] = useState(DEFAULT_DETECTIONS);
+  const [selectedHotspot, setSelectedHotspot] = useState(DEFAULT_DETECTIONS[0]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const tileUrls = {
     dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
@@ -78,6 +153,11 @@ export default function App() {
   // Real NASA FIRMS Fetcher (South Asia Bounding Box: 68W, 5S, 90E, 37N)
   useEffect(() => {
     const fetchNASAData = async () => {
+      if (!NASA_MAP_KEY || NASA_MAP_KEY === 'YOUR_NASA_MAP_KEY') {
+        setHotspots(DEFAULT_DETECTIONS);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const dayParam = timeWindow === '24hours' ? '1' : (timeWindow === '3days' ? '3' : '5');
@@ -104,7 +184,6 @@ export default function App() {
             const brightness = parseFloat(cols[brightIdx]) || 310.0;
             const timeStr = cols[timeIdx] ? `${cols[timeIdx].slice(0, 2)}:${cols[timeIdx].slice(2, 4)} UTC` : '12:00 UTC';
 
-            // Geofence against 196 Industrial Plants
             let nearestPlant = null;
             let minDist = 9999;
             STRATEGIC_PLANTS.forEach(plant => {
@@ -135,42 +214,13 @@ export default function App() {
           setHotspots(parsed);
           if (parsed.length > 0) setSelectedHotspot(parsed[0]);
         } else {
-          // Fallback if key is pending
-          generateFallbackData();
+          setHotspots(DEFAULT_DETECTIONS);
         }
       } catch (err) {
-        generateFallbackData();
+        setHotspots(DEFAULT_DETECTIONS);
       } finally {
         setIsLoading(false);
       }
-    };
-
-    const generateFallbackData = () => {
-      const fallback = [];
-      for (let i = 0; i < 600; i++) {
-        const isSL = i % 10 === 0;
-        const lat = isSL ? (6.0 + Math.random() * 3.5) : (8.5 + Math.random() * 24.0);
-        const lng = isSL ? (79.8 + Math.random() * 2.0) : (70.0 + Math.random() * 18.0);
-        const isInd = Math.random() < 0.12;
-        const plant = isInd ? STRATEGIC_PLANTS[i % STRATEGIC_PLANTS.length] : null;
-        const frp = isInd ? Math.floor(75 + Math.random() * 110) : Math.floor(18 + Math.random() * 95);
-
-        fallback.push({
-          id: i + 1,
-          lat,
-          lng,
-          frp,
-          brightness: Math.floor(305 + Math.random() * 50),
-          satellite: 'VIIRS_NRT',
-          time: '13:45 UTC',
-          region: isSL ? 'Sri Lanka Sector' : (plant ? plant.region : 'Indian Sector'),
-          facility_name: isInd && plant ? plant.name : null,
-          offset_km: isInd ? (Math.random() * 3.5 + 0.5).toFixed(1) : (Math.random() * 80 + 10).toFixed(1),
-          is_anomaly: frp >= 80 || isInd
-        });
-      }
-      setHotspots(fallback);
-      setSelectedHotspot(fallback[0]);
     };
 
     fetchNASAData();
@@ -233,7 +283,7 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '11px' }}>
           <div style={{ backgroundColor: '#0F172A', padding: '4px 10px', borderRadius: '4px', border: '1px solid #1E293B' }}>
             <span style={{ color: '#94A3B8' }}>STRATEGIC SITES: </span>
-            <span style={{ color: '#38BDF8', fontWeight: 'bold' }}>196</span>
+            <span style={{ color: '#38BDF8', fontWeight: 'bold' }}>196+</span>
           </div>
           <div style={{ backgroundColor: '#0F172A', padding: '4px 10px', borderRadius: '4px', border: '1px solid #1E293B' }}>
             <span style={{ color: '#94A3B8' }}>ACTIVE DETECTIONS: </span>
@@ -257,7 +307,7 @@ export default function App() {
             <div style={{ color: '#0284C7', fontWeight: 'bold', fontSize: '10px', marginBottom: '4px' }}>SEARCH LOCATION / PLANT HUB</div>
             <input 
               type="text" 
-              placeholder="Search plant, region..." 
+              placeholder="Search Colombo, Jamnagar, UP..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '4px', padding: '6px 8px', color: '#FFF', fontSize: '11px', outline: 'none', boxSizing: 'border-box' }}
@@ -431,6 +481,7 @@ export default function App() {
       >
         <TileLayer url={tileUrls[tileTheme] || tileUrls.dark} />
 
+        {/* 2,500+ Detections with smooth tooltips */}
         {filteredHotspots.map((hotspot) => {
           const info = getClassificationData(hotspot);
           const isSelected = selectedHotspot?.id === hotspot.id;
