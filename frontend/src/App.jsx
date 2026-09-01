@@ -1,5 +1,5 @@
 ﻿import React, { useState, useMemo } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -10,7 +10,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-// Strategic Industrial Plants Registry (196 Top Tier-1 Sites across Real Industrial Corridors)
+// Strategic Industrial Plants Registry (196 Strategic Facilities across Industrial Hubs)
 const STRATEGIC_PLANTS = Array.from({ length: 196 }, (_, i) => {
   const baseHubs = [
     { name: 'Jamnagar Strategic Refinery', lat: 22.4707, lng: 70.0577, region: 'Gujarat Industrial Belt' },
@@ -27,95 +27,61 @@ const STRATEGIC_PLANTS = Array.from({ length: 196 }, (_, i) => {
     { name: 'Manali Industrial & Petrochem Hub', lat: 13.1673, lng: 80.2582, region: 'Tamil Nadu Coast' },
     { name: 'Barauni Petrochemical Center', lat: 25.4670, lng: 85.9678, region: 'Northern Plains' },
     { name: 'Panipat Strategic Petrochem Hub', lat: 29.3909, lng: 76.9635, region: 'Northern Industrial Belt' },
-    { name: 'Mathura Refinery Complex', lat: 27.4924, lng: 77.6737, region: 'Yamuna Industrial Corridor' },
-    { name: 'Nagpur Multi-Modal Cargo Hub', lat: 21.1458, lng: 79.0882, region: 'Vidarbha Industrial Belt' },
-    { name: 'Jamshedpur Heavy Steel Hub', lat: 22.8046, lng: 86.2029, region: 'Jharkhand Belt' },
-    { name: 'Rourkela Steel Complex', lat: 22.2604, lng: 84.8536, region: 'Odisha Belt' }
+    { name: 'Mathura Refinery Complex', lat: 27.4924, lng: 77.6737, region: 'Yamuna Industrial Corridor' }
   ];
   const hub = baseHubs[i % baseHubs.length];
-  const randOffsetLat = ((i * 37) % 100 - 50) * 0.012;
-  const randOffsetLng = ((i * 41) % 100 - 50) * 0.012;
   return {
     id: `plant-${i + 1}`,
-    name: i < 18 ? hub.name : `Strategic Energy Unit ${i + 1} (${hub.name.split(' ')[0]})`,
-    lat: hub.lat + randOffsetLat,
-    lng: hub.lng + randOffsetLng,
+    name: i < 15 ? hub.name : `Strategic Energy Unit ${i + 1} (${hub.name.split(' ')[0]})`,
+    lat: hub.lat + (((i * 17) % 50 - 25) * 0.02),
+    lng: hub.lng + (((i * 23) % 50 - 25) * 0.02),
     region: hub.region,
     buffer_km: 5
   };
 });
 
-// Accurate India Mainland Boundary Polygon
-const INDIA_POLYGON = [
-  [32.5, 74.8], [32.0, 76.5], [30.5, 78.5], [29.8, 80.2], [27.0, 88.0],
-  [26.5, 89.8], [24.0, 89.0], [22.0, 88.5], [21.5, 87.0], [19.5, 85.0],
-  [17.0, 82.5], [14.0, 80.2], [11.5, 79.8], [8.5, 77.5], [8.5, 76.8],
-  [10.5, 76.0], [13.0, 74.7], [15.5, 73.8], [19.0, 72.8], [21.0, 72.5],
-  [22.8, 69.5], [24.5, 68.8], [27.0, 70.5], [29.5, 72.0], [31.5, 73.5], [32.5, 74.8]
-];
+// Fast Static Pre-calculated Landmass Hotspots (Zero CPU Freeze)
+const generateSafeHotspots = () => {
+  const zones = [
+    { latMin: 28.0, latMax: 31.5, lngMin: 74.5, lngMax: 78.5, region: 'Northern Plains (Punjab/Haryana/UP)', count: 480 },
+    { latMin: 20.5, latMax: 24.2, lngMin: 69.8, lngMax: 73.8, region: 'Gujarat & Western Belt', count: 420 },
+    { latMin: 18.0, latMax: 21.0, lngMin: 73.5, lngMax: 79.5, region: 'Maharashtra Deccan Corridor', count: 390 },
+    { latMin: 12.5, latMax: 16.5, lngMin: 74.8, lngMax: 78.5, region: 'Karnataka & Western Ghats', count: 360 },
+    { latMin: 21.5, latMax: 24.8, lngMin: 81.5, lngMax: 87.5, region: 'Eastern & Central Thermal Belt', count: 342 },
+    { latMin: 9.0, latMax: 12.5, lngMin: 76.5, lngMax: 79.5, region: 'Southern Peninsula', count: 150 }
+  ];
 
-// Ray-Casting Point-in-Polygon Algorithm
-function isInsideIndia(lat, lng) {
-  let inside = false;
-  for (let i = 0, j = INDIA_POLYGON.length - 1; i < INDIA_POLYGON.length; j = i++) {
-    const xi = INDIA_POLYGON[i][0], yi = INDIA_POLYGON[i][1];
-    const xj = INDIA_POLYGON[j][0], yj = INDIA_POLYGON[j][1];
-    const intersect = ((yi > lng) !== (yj > lng)) && (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
-    if (intersect) inside = !inside;
-  }
-  return inside;
-}
-
-// Pseudo-Random Seeded Scatter strictly bound to Landmass
-const generateLandlockedHotspots = () => {
   const detections = [];
-  const TOTAL = 2142;
-  let count = 0;
-  let seed = 42;
+  let id = 1;
 
-  const pseudoRandom = () => {
-    seed = (seed * 9301 + 49297) % 233280;
-    return seed / 233280;
-  };
+  zones.forEach(zone => {
+    for (let i = 0; i < zone.count; i++) {
+      const lat = zone.latMin + Math.random() * (zone.latMax - zone.latMin);
+      const lng = zone.lngMin + Math.random() * (zone.lngMax - zone.lngMin);
+      const isIndustrial = Math.random() < 0.12;
+      const plant = isIndustrial ? STRATEGIC_PLANTS[id % STRATEGIC_PLANTS.length] : null;
+      const frpVal = isIndustrial ? Math.floor(75 + Math.random() * 110) : Math.floor(18 + Math.random() * 95);
 
-  while (count < TOTAL) {
-    let lat, lng, isIndustrial = false, plantRef = null;
-
-    if (count < 260) {
-      // Direct industrial heat points within 5km of 196 sites
-      plantRef = STRATEGIC_PLANTS[count % STRATEGIC_PLANTS.length];
-      lat = plantRef.lat + (pseudoRandom() - 0.5) * 0.05;
-      lng = plantRef.lng + (pseudoRandom() - 0.5) * 0.05;
-      isIndustrial = true;
-    } else {
-      // Natural geographic scatter across Indian territory
-      lat = 8.5 + pseudoRandom() * 23.5;
-      lng = 69.0 + pseudoRandom() * 20.0;
-    }
-
-    if (isInsideIndia(lat, lng)) {
-      const frpVal = isIndustrial ? Math.floor(75 + pseudoRandom() * 115) : Math.floor(18 + pseudoRandom() * 95);
       detections.push({
-        id: count + 1,
+        id: id++,
         lat,
         lng,
         frp: frpVal,
-        brightness: Math.floor(305 + pseudoRandom() * 55),
-        satellite: pseudoRandom() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
-        time: `${String(Math.floor(pseudoRandom() * 14) + 6).padStart(2, '0')}:${String(Math.floor(pseudoRandom() * 60)).padStart(2, '0')} UTC`,
-        region: plantRef ? plantRef.region : (lat > 22.5 ? (lng > 80 ? 'Eastern Corridor' : 'Northern Plains') : (lng > 78 ? 'Eastern Seaboard' : 'Deccan Plateau')),
-        facility_name: isIndustrial && plantRef ? plantRef.name : null,
-        offset_km: isIndustrial ? (pseudoRandom() * 3.5 + 0.4).toFixed(1) : (pseudoRandom() * 85 + 12).toFixed(1),
+        brightness: Math.floor(305 + Math.random() * 55),
+        satellite: Math.random() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
+        time: `${String(Math.floor(Math.random() * 14) + 6).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')} UTC`,
+        region: plant ? plant.region : zone.region,
+        facility_name: isIndustrial && plant ? plant.name : null,
+        offset_km: isIndustrial ? (Math.random() * 3.5 + 0.4).toFixed(1) : (Math.random() * 85 + 12).toFixed(1),
         is_anomaly: frpVal >= 80 || isIndustrial
       });
-      count++;
     }
-  }
+  });
 
   return detections;
 };
 
-const ALL_DETECTIONS = generateLandlockedHotspots();
+const ALL_DETECTIONS = generateSafeHotspots();
 
 export default function App() {
   const [hideHud, setHideHud] = useState(false);
@@ -127,7 +93,7 @@ export default function App() {
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [selectedHotspot, setSelectedHotspot] = useState(ALL_DETECTIONS[0]);
 
-  // Clean Zero-Auth GIS Dark Tiles
+  // Zero-Auth High Performance Dark Tiles
   const tileUrls = {
     dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
     satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -197,7 +163,7 @@ export default function App() {
           </div>
           <div style={{ backgroundColor: '#0F172A', padding: '4px 10px', borderRadius: '4px', border: '1px solid #1E293B' }}>
             <span style={{ color: '#94A3B8' }}>ACTIVE DETECTIONS: </span>
-            <span style={{ color: '#EF4444', fontWeight: 'bold' }}>2,142</span>
+            <span style={{ color: '#EF4444', fontWeight: 'bold' }}>{filteredHotspots.length}</span>
           </div>
           <div style={{ backgroundColor: '#0F172A', padding: '4px 10px', borderRadius: '4px', border: '1px solid #1E293B' }}>
             <span style={{ color: '#94A3B8' }}>STATUS: </span>
@@ -319,7 +285,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Target Telemetry Card */}
+      {/* Target Telemetry Card (Bottom-Right) */}
       {selectedHotspot && (
         <div style={{
           position: 'absolute', bottom: '20px', right: '20px', width: '280px',
@@ -382,16 +348,16 @@ export default function App() {
         </div>
       )}
 
-      {/* Map Canvas */}
+      {/* Main Map Canvas */}
       <MapContainer 
-        center={[20.5937, 78.9629]} 
+        center={[21.0, 78.5]} 
         zoom={5} 
         zoomControl={false}
         style={{ width: '100%', height: '100%' }}
       >
         <TileLayer url={tileUrls[tileTheme] || tileUrls.dark} />
 
-        {/* 2,142 Active Hotspots strictly landlocked across India */}
+        {/* Lightweight & Super Smooth Hotspots Layer */}
         {filteredHotspots.map((hotspot) => {
           const info = getClassificationData(hotspot);
           const isSelected = selectedHotspot?.id === hotspot.id;
@@ -400,33 +366,21 @@ export default function App() {
             <CircleMarker
               key={hotspot.id}
               center={[hotspot.lat, hotspot.lng]}
-              radius={isSelected ? 8 : (hotspot.facility_name ? 5 : (hotspot.frp >= 60 ? 4.5 : 3.5))}
+              radius={isSelected ? 7 : (hotspot.facility_name ? 4.5 : 3.2)}
               pathOptions={{
                 color: isSelected ? '#FFFFFF' : info.color,
                 fillColor: info.color,
-                fillOpacity: isSelected ? 1.0 : (hologramPulse ? 0.85 : 0.65),
-                weight: isSelected ? 2.5 : 1
+                fillOpacity: isSelected ? 1.0 : (hologramPulse ? 0.85 : 0.6),
+                weight: isSelected ? 2 : 1
               }}
               eventHandlers={{
                 click: () => setSelectedHotspot(hotspot)
               }}
             >
-              <Popup>
-                <div style={{ color: '#0F172A', fontFamily: 'sans-serif', minWidth: '180px' }}>
-                  <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#0F172A', marginBottom: '3px' }}>
-                    {info.title}
-                  </div>
-                  <div style={{ fontSize: '11px', margin: '2px 0', color: '#334155' }}>
-                    FRP: <strong style={{ color: '#B91C1C' }}>{hotspot.frp} MW</strong> | Temp: {hotspot.brightness} K
-                  </div>
-                  <div style={{ fontSize: '11px', margin: '2px 0', color: '#334155' }}>
-                    Type: <strong style={{ color: info.color }}>{info.type}</strong>
-                  </div>
-                  <div style={{ fontSize: '10px', color: '#64748B', marginTop: '4px' }}>
-                    Coords: {Number(hotspot.lat).toFixed(4)}, {Number(hotspot.lng).toFixed(4)}
-                  </div>
-                </div>
-              </Popup>
+              <Tooltip direction="top" offset={[0, -4]} opacity={0.95}>
+                <span style={{ fontWeight: 'bold' }}>{info.title}</span><br/>
+                FRP: {hotspot.frp} MW | {info.type}
+              </Tooltip>
             </CircleMarker>
           );
         })}
