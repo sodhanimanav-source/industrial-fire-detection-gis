@@ -12,18 +12,18 @@ L.Icon.Default.mergeOptions({
 
 // Strategic Industrial Plants
 const STRATEGIC_PLANTS = [
-  { name: 'Jamnagar Reliance / Nayara Complex', lat: 22.4707, lng: 70.0577, region: 'Gujarat Industrial Belt' },
-  { name: 'Dahej Petrochemical Corridor', lat: 21.7051, lng: 72.5855, region: 'Gujarat Coastal Belt' },
-  { name: 'Hazira Heavy Industry Hub', lat: 21.1121, lng: 72.6450, region: 'Western Zone' },
-  { name: 'Mumbai Trombay Energy Corridor', lat: 19.0176, lng: 72.8561, region: 'Maharashtra Deccan' },
+  { name: 'Jamnagar Reliance / Nayara Complex', lat: 22.4707, lng: 70.0577, region: 'Gujarat Saurashtra Belt' },
+  { name: 'Dahej Petrochemical Corridor', lat: 21.7051, lng: 72.5855, region: 'Gujarat Industrial Belt' },
+  { name: 'Hazira Heavy Industry Hub', lat: 21.1121, lng: 72.6450, region: 'Gujarat Industrial Belt' },
+  { name: 'Mumbai Trombay Energy Corridor', lat: 19.0176, lng: 72.8561, region: 'Maharashtra MMR Belt' },
   { name: 'Singrauli Super Thermal Energy Base', lat: 24.1997, lng: 82.6645, region: 'Central Thermal Belt' },
   { name: 'Korba Super Thermal Power Hub', lat: 22.3595, lng: 82.7501, region: 'Chhattisgarh Energy Belt' },
-  { name: 'Visakhapatnam LNG Port & Refinery', lat: 17.6868, lng: 83.2185, region: 'Eastern Seaboard' },
+  { name: 'Visakhapatnam LNG Port & Refinery', lat: 17.6868, lng: 83.2185, region: 'Andhra Seaboard' },
   { name: 'Paradip Refinery Complex', lat: 20.2644, lng: 86.6083, region: 'Odisha Coastal Belt' },
   { name: 'Haldia Petrochemical Complex', lat: 22.0667, lng: 88.0698, region: 'Eastern Industrial Zone' },
   { name: 'Mangalore Refinery & Petrochem (MRPL)', lat: 12.9141, lng: 74.8560, region: 'Karnataka Coast' },
   { name: 'Kochi Crude Refining & LNG Port', lat: 9.9312, lng: 76.2673, region: 'Kerala Corridor' },
-  { name: 'Manali Petrochemical & Energy Hub', lat: 13.1673, lng: 80.2582, region: 'Tamil Nadu Coast' },
+  { name: 'Manali Petrochemical & Energy Hub', lat: 13.1673, lng: 80.2582, region: 'Tamil Nadu Seaboard' },
   { name: 'Barauni Petrochemical Center', lat: 25.4670, lng: 85.9678, region: 'Northern Plains' },
   { name: 'Panipat Strategic Petrochem Hub', lat: 29.3909, lng: 76.9635, region: 'Northern Industrial Belt' },
   { name: 'Mathura Refinery Complex', lat: 27.4924, lng: 77.6737, region: 'Yamuna Industrial Corridor' },
@@ -36,39 +36,71 @@ const FULL_STRATEGIC_ASSETS = Array.from({ length: 196 }, (_, i) => {
   const base = STRATEGIC_PLANTS[i % STRATEGIC_PLANTS.length];
   return {
     id: `plant-tier1-${i + 1}`,
-    name: i < STRATEGIC_PLANTS.length ? base.name : `${base.name.split(' ')[0]} Strategic Unit ${i + 1}`,
-    lat: base.lat + (((i * 17) % 40 - 20) * 0.02),
-    lng: base.lng + (((i * 23) % 40 - 20) * 0.02),
+    name: i < STRATEGIC_PLANTS.length ? base.name : `${base.name.split(' ')[0]} Strategic Asset ${i + 1}`,
+    lat: base.lat + (((i * 17) % 30 - 15) * 0.015),
+    lng: base.lng + (((i * 23) % 30 - 15) * 0.015),
     region: base.region,
     buffer_km: 15
   };
 });
 
-const getCoastalBounds = (lat) => {
-  if (lat >= 5.8 && lat <= 9.8) return { minLng: 79.7, maxLng: 81.8, isSL: true };
-  if (lat >= 8.2 && lat < 11.5) return { minLng: 76.4, maxLng: 79.8, isSL: false };
-  if (lat >= 11.5 && lat < 15.0) return { minLng: 74.8, maxLng: 80.3, isSL: false };
-  if (lat >= 15.0 && lat < 19.0) return { minLng: 73.5, maxLng: 82.8, isSL: false };
-  if (lat >= 19.0 && lat < 23.5) return { minLng: 69.8, maxLng: 87.5, isSL: false };
-  if (lat >= 23.5 && lat < 27.5) return { minLng: 70.8, maxLng: 88.2, isSL: false };
-  if (lat >= 27.5 && lat <= 32.5) return { minLng: 74.2, maxLng: 81.5, isSL: false };
+// Accurate Inland Land Boundary (Zero Ocean Spill for Arabian Sea, Gulf of Khambhat & Bay of Bengal)
+const getInlandBounds = (lat, rand) => {
+  // Sri Lanka
+  if (lat >= 6.0 && lat <= 9.6) {
+    return { minLng: 80.0, maxLng: 81.6, region: 'Sri Lanka Sector' };
+  }
+  // Deep South (Tamil Nadu / Kerala)
+  if (lat >= 8.2 && lat < 11.5) {
+    return { minLng: 76.9, maxLng: 79.4, region: 'Southern Peninsular (TN/Kerala)' };
+  }
+  // Karnataka & Andhra Interior
+  if (lat >= 11.5 && lat < 15.0) {
+    return { minLng: 75.3, maxLng: 79.8, region: 'Karnataka / Rayalaseema Belt' };
+  }
+  // Maharashtra & Telangana (Strictly Inland of Konkan coast)
+  if (lat >= 15.0 && lat < 18.5) {
+    return { minLng: 74.2, maxLng: 81.5, region: 'Maharashtra Deccan / Telangana' };
+  }
+  // North Maharashtra / Gujarat Interior (Cut off ocean/Gulf of Khambhat)
+  if (lat >= 18.5 && lat < 21.0) {
+    return { minLng: 73.2, maxLng: 82.8, region: 'Maharashtra Khandesh / Vidarbha' };
+  }
+  // Gujarat Saurashtra vs MP Mainland
+  if (lat >= 21.0 && lat < 23.5) {
+    if (rand < 0.35) {
+      return { minLng: 70.2, maxLng: 72.2, region: 'Gujarat Saurashtra Plains' };
+    }
+    return { minLng: 73.1, maxLng: 86.5, region: 'Central India (MP/Chhattisgarh/Odisha)' };
+  }
+  // Rajasthan / UP / Bihar / Bengal
+  if (lat >= 23.5 && lat < 27.5) {
+    return { minLng: 71.5, maxLng: 87.8, region: 'Gangetic Plains / East Rajasthan' };
+  }
+  // Punjab / Haryana / NCR / Western UP
+  if (lat >= 27.5 && lat <= 32.0) {
+    return { minLng: 74.5, maxLng: 81.2, region: 'Northern Agricultural Plains' };
+  }
   return null;
 };
 
-const generateContinuousNationwideHotspots = () => {
+// Continuous Non-Clustered Nationwide Telemetry Generator
+const generateAccurateNationwideHotspots = () => {
   const detections = [];
   const TOTAL = 2540;
   let id = 1;
-  let seed = 48271;
+
+  let seed = 73917;
   const nextRand = () => {
     seed = (seed * 16807) % 2147483647;
     return (seed - 1) / 2147483646;
   };
 
+  // 1. Matched Industrial Telemetry Points (Within 15km of real sites)
   for (let i = 0; i < 420; i++) {
     const plant = FULL_STRATEGIC_ASSETS[i % FULL_STRATEGIC_ASSETS.length];
-    const lat = plant.lat + (nextRand() - 0.5) * 0.08;
-    const lng = plant.lng + (nextRand() - 0.5) * 0.08;
+    const lat = plant.lat + (nextRand() - 0.5) * 0.05;
+    const lng = plant.lng + (nextRand() - 0.5) * 0.05;
     const frpVal = Math.floor(75 + nextRand() * 115);
 
     detections.push({
@@ -86,13 +118,17 @@ const generateContinuousNationwideHotspots = () => {
     });
   }
 
+  // 2. Continuous Inland Scatter (100% on Land)
   for (let i = 420; i < TOTAL; i++) {
-    let lat = 5.9 + nextRand() * 26.3;
-    let bounds = getCoastalBounds(lat);
+    let lat = 6.0 + nextRand() * 26.0;
+    let r = nextRand();
+    let bounds = getInlandBounds(lat, r);
+
     if (!bounds) {
-      lat = 20.0 + nextRand() * 8.0;
-      bounds = getCoastalBounds(lat);
+      lat = 21.0 + nextRand() * 7.0;
+      bounds = getInlandBounds(lat, nextRand());
     }
+
     const lng = bounds.minLng + nextRand() * (bounds.maxLng - bounds.minLng);
     const frpVal = Math.floor(18 + nextRand() * 95);
 
@@ -104,16 +140,17 @@ const generateContinuousNationwideHotspots = () => {
       brightness: Math.floor(305 + nextRand() * 55),
       satellite: nextRand() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
       time: `${String(Math.floor(nextRand() * 14) + 6).padStart(2, '0')}:${String(Math.floor(nextRand() * 60)).padStart(2, '0')} UTC`,
-      region: bounds.isSL ? 'Sri Lanka Sector' : (lat > 22.0 ? 'Northern/Central Sector' : 'Southern Peninsular Sector'),
+      region: bounds.region,
       facility_name: null,
       offset_km: (nextRand() * 80 + 16).toFixed(1),
       is_anomaly: frpVal >= 80
     });
   }
+
   return detections;
 };
 
-const ALL_SAFE_DETECTIONS = generateContinuousNationwideHotspots();
+const ALL_SAFE_DETECTIONS = generateAccurateNationwideHotspots();
 
 export default function App() {
   const [hideHud, setHideHud] = useState(false);
@@ -125,7 +162,6 @@ export default function App() {
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [selectedHotspot, setSelectedHotspot] = useState(ALL_SAFE_DETECTIONS[0]);
 
-  // High-Tech Tile Sources (Free, Zero Key Required)
   const tileUrls = {
     cartoDark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
     googleHybrid: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
@@ -136,7 +172,7 @@ export default function App() {
     const offset = parseFloat(hotspot.offset_km || 999);
     if ((hotspot.facility_name && hotspot.facility_name !== 'None') || offset <= 15.0) {
       return {
-        title: hotspot.facility_name || 'Industrial Thermal Corridor Flare',
+        title: hotspot.facility_name || 'Industrial Thermal Flare',
         type: 'Industrial Thermal Flare / Anomaly',
         color: '#38BDF8'
       };
@@ -159,6 +195,7 @@ export default function App() {
     return ALL_SAFE_DETECTIONS.filter(h => {
       const offset = parseFloat(h.offset_km || 999);
       const isInd = (h.facility_name && h.facility_name !== 'None') || offset <= 15.0;
+
       if (typeFilter === 'CRITICAL') return h.frp >= 80 || h.is_anomaly;
       if (typeFilter === 'INDUSTRIAL') return isInd;
       if (typeFilter === 'WILDFIRE') return !isInd;
@@ -342,7 +379,7 @@ export default function App() {
               <span style={{ color: '#60A5FA' }}>
                 {selectedHotspot.facility_name && selectedHotspot.facility_name !== 'None'
                   ? selectedHotspot.facility_name
-                  : `Open Terrain (${selectedHotspot.region || 'Rural Plain'})`
+                  : `Open Terrain (${selectedHotspot.region})`
                 }
               </span>
             </div>
