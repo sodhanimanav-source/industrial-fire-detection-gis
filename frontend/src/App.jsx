@@ -20,39 +20,181 @@ function MapViewController({ targetCenter, targetZoom }) {
   return null;
 }
 
-// NASA FIRMS Map Key (Agar live key hai toh yahan paste karein)
 const NASA_MAP_KEY = 'YOUR_NASA_MAP_KEY';
 
-// 196+ Strategic Industrial Plants
-const STRATEGIC_PLANTS = [
-  { name: 'Jamnagar Reliance / Nayara Complex', lat: 22.4707, lng: 70.0577, region: 'Gujarat Saurashtra Belt' },
-  { name: 'Dahej Petrochemical Corridor', lat: 21.7051, lng: 72.5855, region: 'Gujarat Industrial Belt' },
-  { name: 'Hazira Heavy Industry Hub', lat: 21.1121, lng: 72.6450, region: 'Gujarat Industrial Belt' },
-  { name: 'Shirpur Gold & Agro Processing Zone', lat: 21.3504, lng: 74.8812, region: 'Maharashtra Khandesh' },
-  { name: 'Mumbai Trombay Energy Corridor', lat: 19.0176, lng: 72.8561, region: 'Maharashtra MMR Belt' },
-  { name: 'Singrauli Super Thermal Energy Base', lat: 24.1997, lng: 82.6645, region: 'Central Thermal Belt' },
-  { name: 'Korba Super Thermal Power Hub', lat: 22.3595, lng: 82.7501, region: 'Chhattisgarh Energy Belt' },
-  { name: 'Visakhapatnam LNG Port & Refinery', lat: 17.6868, lng: 83.2185, region: 'Andhra Seaboard' },
-  { name: 'Paradip Refinery Complex', lat: 20.2644, lng: 86.6083, region: 'Odisha Coastal Belt' },
-  { name: 'Haldia Petrochemical Complex', lat: 22.0667, lng: 88.0698, region: 'Eastern Industrial Zone' },
-  { name: 'Mangalore Refinery & Petrochem (MRPL)', lat: 12.9141, lng: 74.8560, region: 'Karnataka Coast' },
-  { name: 'Kochi Crude Refining & LNG Port', lat: 9.9312, lng: 76.2673, region: 'Kerala Corridor' },
-  { name: 'Manali Petrochemical & Energy Hub', lat: 13.1673, lng: 80.2582, region: 'Tamil Nadu Seaboard' },
-  { name: 'Barauni Petrochemical Center', lat: 25.4670, lng: 85.9678, region: 'Northern Plains' },
-  { name: 'Panipat Strategic Petrochem Hub', lat: 29.3909, lng: 76.9635, region: 'Northern Industrial Belt' },
-  { name: 'Mathura Refinery Complex', lat: 27.4924, lng: 77.6737, region: 'Yamuna Industrial Corridor' },
-  { name: 'Sapugaskanda Refinery Complex (CPC)', lat: 6.9658, lng: 79.9489, region: 'Western Province (Sri Lanka)' },
-  { name: 'Hambantota International Port & Tank Farm', lat: 6.1248, lng: 81.1213, region: 'Southern Sri Lanka' },
-  { name: 'Trincomalee Petroleum Terminal', lat: 8.5711, lng: 81.2335, region: 'Eastern Sri Lanka' }
+// Complete Master Registry of All Industrial Facilities Across India & Sri Lanka
+const MASTER_INDUSTRIAL_FACILITIES = [
+  // --- TATA INDUSTRIAL & CHEMICAL COMPLEXES ---
+  { name: 'Tata Chemicals / Tata Salt Mega Complex Mithapur', lat: 22.4116, lng: 68.9950, region: 'Gujarat Coastal Chemical Belt' },
+  { name: 'Tata Chemicals Fertilizer Complex Babrala', lat: 28.2710, lng: 78.4120, region: 'Uttar Pradesh Central' },
+  { name: 'Tata Steel Jamshedpur Integrated Works', lat: 22.8046, lng: 86.2029, region: 'Jharkhand Belt' },
+  { name: 'Tata Steel Kalinganagar Mega Plant', lat: 20.9580, lng: 86.0120, region: 'Odisha Industrial Zone' },
+  { name: 'Tata Motors & Heavy Industrial Corridor Sanand', lat: 22.9860, lng: 72.3780, region: 'Gujarat Industrial Belt' },
+  { name: 'Tata Power Trombay Thermal Station Mumbai', lat: 19.0020, lng: 72.9050, region: 'Maharashtra Deccan' },
+  { name: 'Tata Mundra Ultra Mega Power Plant', lat: 22.8120, lng: 69.5450, region: 'Kutch Industrial Belt' },
+
+  // --- GUJARAT PETROCHEMICAL, CHEMICAL & POWER (RELIANCE / ADANI / PSU) ---
+  { name: 'Reliance Jamnagar Mega Refinery & Polypropylene Complex', lat: 22.4707, lng: 70.0577, region: 'Gujarat Saurashtra Belt' },
+  { name: 'Nayara Energy Vadinar Refinery', lat: 22.3980, lng: 69.7120, region: 'Gujarat Coastal Belt' },
+  { name: 'ONGC Petro additions Ltd (OPaL) Dahej', lat: 21.7051, lng: 72.5855, region: 'Gujarat Coastal Belt' },
+  { name: 'Petronet LNG Terminal Dahej', lat: 21.6730, lng: 72.5320, region: 'Gujarat Coastal Belt' },
+  { name: 'Reliance Industries Hazira Petrochemical Complex', lat: 21.1121, lng: 72.6450, region: 'Gujarat Coastal Belt' },
+  { name: 'L&T Heavy Engineering & Shipbuilding Hazira', lat: 21.1340, lng: 72.6780, region: 'Gujarat Coastal Belt' },
+  { name: 'IOCL Gujarat Refinery Koyali Vadodara', lat: 22.3511, lng: 73.1360, region: 'Gujarat Industrial Belt' },
+  { name: 'GSFC Fertilizer & Petrochemicals Vadodara', lat: 22.3680, lng: 73.1590, region: 'Gujarat Industrial Belt' },
+  { name: 'GNFC Fertilizer & Chemical Complex Bharuch', lat: 21.7480, lng: 73.0180, region: 'Gujarat Industrial Belt' },
+  { name: 'Ankleshwar GIDC Mega Chemical Corridor', lat: 21.6264, lng: 73.0033, region: 'Gujarat Industrial Belt' },
+  { name: 'Adani Mundra Ultra Mega Power Plant (4620 MW)', lat: 22.8250, lng: 69.5280, region: 'Kutch Industrial Belt' },
+  { name: 'Adani Copper Smelter & Petrochemicals Mundra', lat: 22.8420, lng: 69.7040, region: 'Kutch Industrial Belt' },
+  { name: 'GACL Caustic Soda & Chlor-Alkali Dahej', lat: 21.7120, lng: 72.5680, region: 'Gujarat Coastal Belt' },
+  { name: 'UPL Chemical Manufacturing Hub Jhagadia', lat: 21.6820, lng: 73.1450, region: 'Gujarat Industrial Belt' },
+  { name: 'Atul Ltd Mega Chemical Complex Valsad', lat: 20.5180, lng: 72.9560, region: 'Gujarat Industrial Belt' },
+  { name: 'Vapi GIDC Industrial Chemical Cluster', lat: 20.3720, lng: 72.9100, region: 'Gujarat Industrial Belt' },
+
+  // --- MAHARASHTRA & CENTRAL WEST ---
+  { name: 'Shirpur Gold Refinery & Heavy Agro Complex', lat: 21.3504, lng: 74.8812, region: 'Maharashtra Khandesh' },
+  { name: 'BPCL Mumbai Strategic Coastal Refinery', lat: 19.0080, lng: 72.8940, region: 'Maharashtra Deccan' },
+  { name: 'HPCL Mumbai Petroleum Refinery Mahul', lat: 18.9980, lng: 72.8870, region: 'Maharashtra Deccan' },
+  { name: 'RCF Trombay Fertilizer Complex Mumbai', lat: 19.0430, lng: 72.8950, region: 'Maharashtra Deccan' },
+  { name: 'RCF Thal Mega Nitrogenous Fertilizer Unit', lat: 18.6947, lng: 72.8752, region: 'Maharashtra Deccan' },
+  { name: 'JSW Steel Dolvi Integrated Metallurgical Complex', lat: 18.7050, lng: 73.0230, region: 'Maharashtra Deccan' },
+  { name: 'JSW Energy Jaigad Thermal Power Plant', lat: 17.3010, lng: 73.2080, region: 'Maharashtra Coastal Belt' },
+  { name: 'Dabhol LNG & RGPPL Power Complex', lat: 17.5250, lng: 73.1750, region: 'Maharashtra Coastal Belt' },
+  { name: 'HOCL Chemical Complex Rasayani', lat: 18.8950, lng: 73.1764, region: 'Maharashtra Deccan' },
+  { name: 'Tarapur Atomic Power Station & Chemical MIDC', lat: 19.8378, lng: 72.6582, region: 'Maharashtra Deccan' },
+  { name: 'Chandrapur Super Thermal Power Station (2920 MW)', lat: 19.9822, lng: 79.2942, region: 'Vidarbha Industrial Belt' },
+  { name: 'Koradi Super Thermal Power Station Nagpur', lat: 21.2460, lng: 79.0980, region: 'Vidarbha Industrial Belt' },
+  { name: 'Khaparkheda Thermal Power Plant Nagpur', lat: 21.2820, lng: 79.1170, region: 'Vidarbha Industrial Belt' },
+  { name: 'Adani Power Tiroda Super Thermal (3300 MW)', lat: 21.4150, lng: 79.9670, region: 'Vidarbha Industrial Belt' },
+  { name: 'RattanIndia Amravati Thermal Power Plant', lat: 20.9320, lng: 77.8540, region: 'Vidarbha Industrial Belt' },
+  { name: 'MIDC Butibori Heavy Industrial Complex Nagpur', lat: 20.9230, lng: 78.9950, region: 'Vidarbha Industrial Belt' },
+  { name: 'MIDC Chakan Industrial Corridor Pune', lat: 18.7560, lng: 73.8420, region: 'Maharashtra Deccan' },
+
+  // --- CENTRAL THERMAL & MINING BELT (MP / CHHATTISGARH) ---
+  { name: 'NTPC Singrauli Super Thermal Station Shaktinagar', lat: 24.1997, lng: 82.6645, region: 'Central Thermal Belt' },
+  { name: 'NTPC Vindhyachal Super Thermal Station (4760 MW)', lat: 24.0983, lng: 82.6719, region: 'Central Thermal Belt' },
+  { name: 'NTPC Rihand Super Thermal Complex', lat: 24.0256, lng: 82.7917, region: 'Central Thermal Belt' },
+  { name: 'Reliance Sasan Ultra Mega Power (3960 MW)', lat: 23.9780, lng: 82.6180, region: 'Central Thermal Belt' },
+  { name: 'NTPC Korba Super Thermal Power (2600 MW)', lat: 22.3595, lng: 82.7501, region: 'Chhattisgarh Energy Belt' },
+  { name: 'NTPC Sipat Super Thermal Bilaspur', lat: 22.1320, lng: 82.2930, region: 'Chhattisgarh Energy Belt' },
+  { name: 'NTPC Lara Super Thermal Raigarh', lat: 21.7580, lng: 83.4370, region: 'Chhattisgarh Energy Belt' },
+  { name: 'SAIL Bhilai Steel & Heavy Rail Complex', lat: 21.1938, lng: 81.4024, region: 'Chhattisgarh Energy Belt' },
+  { name: 'BALCO Aluminium Smelter & Captive Power Korba', lat: 22.3980, lng: 82.7480, region: 'Chhattisgarh Energy Belt' },
+  { name: 'JSPL Jindal Steel & Power Raigarh', lat: 21.9120, lng: 83.3980, region: 'Chhattisgarh Energy Belt' },
+  { name: 'BORL Bharat Oman Refineries Bina', lat: 24.1872, lng: 78.1884, region: 'Madhya Pradesh Central' },
+  { name: 'NFL Vijaipur Mega Fertilizer Complex Guna', lat: 24.5580, lng: 77.3050, region: 'Madhya Pradesh Central' },
+  { name: 'Hindalco Mahan Aluminium & Smelter Singrauli', lat: 24.2380, lng: 82.3560, region: 'Central Thermal Belt' },
+  { name: 'Hindalco Renukoot Aluminium Works Sonbhadra', lat: 24.2180, lng: 83.0320, region: 'Central Thermal Belt' },
+  { name: 'Anpara Super Thermal Power Station', lat: 24.2050, lng: 82.7750, region: 'Central Thermal Belt' },
+  { name: 'Obra Thermal Power Plant Sonbhadra', lat: 24.4210, lng: 82.9820, region: 'Central Thermal Belt' },
+
+  // --- EASTERN CORRIDOR (ODISHA / JHARKHAND / WB / BIHAR) ---
+  { name: 'SAIL Bokaro Steel Plant (BSL)', lat: 23.6693, lng: 86.1511, region: 'Jharkhand Belt' },
+  { name: 'SAIL IISCO Steel Plant Burnpur Asansol', lat: 23.6720, lng: 86.9380, region: 'West Bengal Hub' },
+  { name: 'SAIL Durgapur Steel Plant (DSP)', lat: 23.5180, lng: 87.3240, region: 'West Bengal Hub' },
+  { name: 'DVC Mejia Thermal Power Station Bankura', lat: 23.4680, lng: 87.1350, region: 'West Bengal Hub' },
+  { name: 'IOCL Haldia Strategic Petrochemical Refinery', lat: 22.0667, lng: 88.0698, region: 'Eastern Industrial Zone' },
+  { name: 'Haldia Petrochemicals Ltd (HPL) Naphtha Cracker', lat: 22.0480, lng: 88.1020, region: 'Eastern Industrial Zone' },
+  { name: 'SAIL Rourkela Steel Plant (RSP)', lat: 22.2604, lng: 84.8536, region: 'Odisha Industrial Zone' },
+  { name: 'JSPL Angul Mega Steel & Pellet Complex', lat: 20.8402, lng: 85.1346, region: 'Odisha Industrial Zone' },
+  { name: 'Vedanta Aluminium Smelter & Power Jharsuguda', lat: 21.8480, lng: 84.0320, region: 'Odisha Industrial Zone' },
+  { name: 'NALCO Aluminium Smelter Angul', lat: 20.8350, lng: 85.1580, region: 'Odisha Industrial Zone' },
+  { name: 'IOCL Paradip Mega Petroleum Refinery', lat: 20.2644, lng: 86.6083, region: 'Odisha Coastal Belt' },
+  { name: 'IFFCO Paradip Fertilizer Complex', lat: 20.2920, lng: 86.6540, region: 'Odisha Coastal Belt' },
+  { name: 'NTPC Talcher Super Thermal Power Kaniha (3000 MW)', lat: 21.0980, lng: 85.0750, region: 'Odisha Industrial Zone' },
+  { name: 'Dhamra LNG Terminal Bhadrak', lat: 20.8120, lng: 86.9650, region: 'Odisha Coastal Belt' },
+  { name: 'IOCL Barauni Petroleum Refinery Begusarai', lat: 25.4670, lng: 85.9678, region: 'Northern Plains' },
+  { name: 'NTPC Barh Super Thermal Power (3300 MW)', lat: 25.4850, lng: 85.7350, region: 'Northern Plains' },
+  { name: 'NTPC Kahalgaon Super Thermal Bhagalpur', lat: 25.2480, lng: 87.2350, region: 'Northern Plains' },
+
+  // --- NORTHERN CORRIDOR (PUNJAB / HARYANA / UP / RAJASTHAN) ---
+  { name: 'IOCL Panipat Petrochemical & Refinery Hub', lat: 29.3909, lng: 76.9635, region: 'Northern Industrial Belt' },
+  { name: 'NFL Panipat Fertilizer Unit', lat: 29.4120, lng: 76.9820, region: 'Northern Industrial Belt' },
+  { name: 'HMEL Guru Gobind Singh Refinery Bathinda', lat: 30.0384, lng: 74.8219, region: 'Punjab Industrial Sector' },
+  { name: 'NFL Bathinda Fertilizer Plant', lat: 30.2280, lng: 74.9650, region: 'Punjab Industrial Sector' },
+  { name: 'TSPL Talwandi Sabo Power Mansa (1980 MW)', lat: 29.9120, lng: 75.2480, region: 'Punjab Industrial Sector' },
+  { name: 'IOCL Mathura Strategic Refinery Complex', lat: 27.4924, lng: 77.6737, region: 'Yamuna Industrial Corridor' },
+  { name: 'NTPC Dadri National Capital Power Station', lat: 28.5980, lng: 77.5580, region: 'Delhi NCR' },
+  { name: 'NTPC Unchahar Thermal Power Raebareli', lat: 25.9120, lng: 81.3280, region: 'Uttar Pradesh Central' },
+  { name: 'IFFCO Aonla Mega Fertilizer Plant Bareilly', lat: 28.2850, lng: 79.2560, region: 'Uttar Pradesh Central' },
+  { name: 'IFFCO Phulpur Fertilizer Complex Prayagraj', lat: 25.5520, lng: 82.0480, region: 'Eastern UP' },
+  { name: 'Rosa Thermal Power Plant Shahjahanpur', lat: 27.8180, lng: 79.9240, region: 'Uttar Pradesh Central' },
+  { name: 'Suratgarh Super Thermal Power (2820 MW)', lat: 29.1850, lng: 73.9020, region: 'Rajasthan North' },
+  { name: 'Kota Super Thermal Power Station', lat: 25.1780, lng: 75.8120, region: 'Rajasthan East' },
+  { name: 'Chhabra Super Thermal Power Baran', lat: 24.6210, lng: 76.8620, region: 'Rajasthan East' },
+  { name: 'Hindustan Zinc Smelter Chanderiya Chittorgarh', lat: 24.8320, lng: 74.6280, region: 'Rajasthan East' },
+  { name: 'Shree Cement Integrated Complex Beawar', lat: 26.1050, lng: 74.3250, region: 'Rajasthan East' },
+  { name: 'UltraTech Cement Works Kotputli', lat: 27.7020, lng: 76.1980, region: 'Rajasthan North' },
+  { name: 'Ambuja Cement Industrial Works Darlaghat', lat: 31.2380, lng: 76.9450, region: 'Himachal Industrial Corridor' },
+
+  // --- SOUTHERN CORRIDOR (AP / TELANGANA / KARNATAKA / TN / KERALA) ---
+  { name: 'HPCL Visakhapatnam Petroleum Refinery', lat: 17.6868, lng: 83.2185, region: 'Andhra Seaboard' },
+  { name: 'RINL Visakhapatnam Steel Plant (Vizag Steel)', lat: 17.6280, lng: 83.1580, region: 'Andhra Seaboard' },
+  { name: 'NTPC Simhadri Super Thermal Power Vizag', lat: 17.6010, lng: 83.0850, region: 'Andhra Seaboard' },
+  { name: 'Coromandel Fertilizer Complex Vizag', lat: 17.7020, lng: 83.2450, region: 'Andhra Seaboard' },
+  { name: 'NFCL Fertilizers Complex Kakinada', lat: 16.9680, lng: 82.2580, region: 'Andhra Seaboard' },
+  { name: 'NTPC Ramagundam Super Thermal Peddapalli (2600 MW)', lat: 18.7554, lng: 79.5140, region: 'Telangana Energy Belt' },
+  { name: 'Singareni Thermal Power Plant Mancherial', lat: 18.8450, lng: 79.5820, region: 'Telangana Energy Belt' },
+  { name: 'Kothagudem Thermal Power Station Paloncha', lat: 17.5580, lng: 80.6980, region: 'Telangana Energy Belt' },
+  { name: 'Dr. NTTPS Vijayawada Thermal Power Station', lat: 16.5980, lng: 80.5350, region: 'Andhra Coastal Corridor' },
+  { name: 'MRPL Mangalore Refinery & Petrochemicals Ltd', lat: 12.9141, lng: 74.8560, region: 'Karnataka Coast' },
+  { name: 'Mangalore Chemicals & Fertilizers (MCF) Panambur', lat: 12.9350, lng: 74.8150, region: 'Karnataka Coast' },
+  { name: 'JSW Steel Vijayanagar Mega Complex Toranagallu', lat: 15.1850, lng: 76.6580, region: 'Karnataka Central' },
+  { name: 'NTPC Kudgi Super Thermal Station Bijapur', lat: 16.7150, lng: 75.8420, region: 'Karnataka Central' },
+  { name: 'BPCL Kochi Strategic Crude Refinery Ambalamugal', lat: 9.9312, lng: 76.2673, region: 'Kerala Corridor' },
+  { name: 'Petronet LNG Terminal Puthuvypeen Kochi', lat: 9.9880, lng: 76.2250, region: 'Kerala Corridor' },
+  { name: 'FACT Fertilizer & Petrochem Complex Udyogamandal', lat: 10.0780, lng: 76.3250, region: 'Kerala Corridor' },
+  { name: 'CPCL Manali Petroleum Refinery Chennai', lat: 13.1673, lng: 80.2582, region: 'Tamil Nadu Seaboard' },
+  { name: 'Manali Petrochemicals & Fertilizer Corridor (MFL)', lat: 13.1820, lng: 80.2710, region: 'Tamil Nadu Seaboard' },
+  { name: 'North Chennai Super Thermal Power Station Ennore', lat: 13.2050, lng: 80.3280, region: 'Tamil Nadu Seaboard' },
+  { name: 'NTECL Vallur Thermal Power Plant Chennai', lat: 13.2380, lng: 80.2850, region: 'Tamil Nadu Seaboard' },
+  { name: 'NLC Neyveli Lignite Thermal Power Cuddalore', lat: 11.5980, lng: 79.4850, region: 'Tamil Nadu Central' },
+  { name: 'Tuticorin Thermal Power Station (TTPS)', lat: 8.7642, lng: 78.1348, region: 'Tamil Nadu Seaboard' },
+  { name: 'SPIC Petrochemical & Heavy Fertilizer Tuticorin', lat: 8.7450, lng: 78.1280, region: 'Tamil Nadu Seaboard' },
+  { name: 'Sterlite Smelter & Industrial Complex Tuticorin', lat: 8.7980, lng: 78.1120, region: 'Tamil Nadu Seaboard' },
+  { name: 'Mettur Thermal Power Station Salem', lat: 11.7980, lng: 77.7950, region: 'Tamil Nadu Central' },
+
+  // --- NORTHEAST REFINERIES & HEAVY ENGINEERING UNITS ---
+  { name: 'IOCL Digboi Heritage Refinery', lat: 27.3820, lng: 95.6280, region: 'Assam Valley' },
+  { name: 'IOCL Guwahati Refinery Noonmati', lat: 26.1850, lng: 91.8020, region: 'Assam Valley' },
+  { name: 'IOCL Bongaigaon Refinery & Petrochemicals (BRPL)', lat: 26.4820, lng: 90.5280, region: 'Assam Valley' },
+  { name: 'Numaligarh Strategic Refinery Ltd (NRL) Golaghat', lat: 26.5980, lng: 93.7540, region: 'Assam Valley' },
+  { name: 'BCPL Brahmaputra Cracker & Polymer Lepetkata', lat: 27.3480, lng: 94.8950, region: 'Assam Valley' },
+  { name: 'BHEL Heavy Electrical Equipment Plant Haridwar', lat: 29.9250, lng: 78.0850, region: 'Northern Industrial Belt' },
+  { name: 'BHEL Heavy Electricals Mega Plant Bhopal', lat: 23.2850, lng: 77.4680, region: 'Madhya Pradesh Central' },
+  { name: 'BHEL High Pressure Boiler Plant Tiruchirappalli', lat: 10.7680, lng: 78.7450, region: 'Tamil Nadu Central' },
+  { name: 'BHEL Heavy Power Equipment Unit Hyderabad', lat: 17.5020, lng: 78.2980, region: 'Telangana Deccan' },
+  { name: 'HAL Aerospace Manufacturing Division Bengaluru', lat: 12.9580, lng: 77.6780, region: 'Bengaluru Tech Corridor' },
+  { name: 'Cochin Shipyard Heavy Engineering Kochi', lat: 9.9540, lng: 76.2890, region: 'Kerala Corridor' },
+  { name: 'Mazagon Dock Shipbuilders Ltd Mumbai', lat: 18.9680, lng: 72.8480, region: 'Maharashtra Deccan' },
+
+  // --- SRI LANKA STRATEGIC INDUSTRIAL & ENERGY SITES ---
+  { name: 'Sapugaskanda CPC Strategic Petroleum Refinery', lat: 6.9658, lng: 79.9489, region: 'Western Province (Sri Lanka)' },
+  { name: 'Colombo Port South Container & Bunkering Terminal', lat: 6.9520, lng: 79.8510, region: 'Western Province (Sri Lanka)' },
+  { name: 'Kerawalapitiya Yugadanavi Power Complex', lat: 7.0014, lng: 79.8821, region: 'Western Province (Sri Lanka)' },
+  { name: 'Kelanitissa CCGT Thermal Power Station Colombo', lat: 6.9480, lng: 79.8780, region: 'Western Province (Sri Lanka)' },
+  { name: 'Norochcholai Lakvijaya Coal Power Station (900 MW)', lat: 8.0163, lng: 79.7214, region: 'North Western (Sri Lanka)' },
+  { name: 'Trincomalee China Bay Strategic Petroleum Tank Farm', lat: 8.5711, lng: 81.2335, region: 'Eastern Sri Lanka' },
+  { name: 'Trincomalee Deep Water Industrial Harbor & Terminal', lat: 8.5620, lng: 81.2180, region: 'Eastern Sri Lanka' },
+  { name: 'Hambantota Magam Ruhunupura Port & Tank Farm', lat: 6.1248, lng: 81.1213, region: 'Southern Sri Lanka' },
+  { name: 'Puttalam Insee / Holcim Mega Cement Works', lat: 8.0320, lng: 79.8280, region: 'North Western (Sri Lanka)' },
+  { name: 'Galle Ruhunu Insee Cement Grinding Works', lat: 6.0420, lng: 80.2350, region: 'Southern Sri Lanka' },
+  { name: 'Kankesanthurai (KKS) Port & Cement Complex', lat: 9.8142, lng: 80.0381, region: 'Northern Sri Lanka' },
+  { name: 'Paranthan Chemical Manufacturing Kilinochchi', lat: 9.4350, lng: 80.4080, region: 'Northern Sri Lanka' },
+  { name: 'Biyagama Heavy Export Processing Industrial Zone', lat: 6.9380, lng: 79.9920, region: 'Western Province (Sri Lanka)' },
+  { name: 'Katunayake Free Trade Industrial Processing Zone', lat: 7.1680, lng: 79.8920, region: 'Western Province (Sri Lanka)' },
+  { name: 'Mirigama Heavy Export Processing Zone', lat: 7.2450, lng: 80.1280, region: 'Western Province (Sri Lanka)' },
+  { name: 'Pelwatte Sugar Industries & Distilleries Buttala', lat: 6.7450, lng: 81.2580, region: 'Uva Province (Sri Lanka)' }
 ];
 
+// Expanded 196+ Strategic Assets Directory
 const FULL_STRATEGIC_ASSETS = Array.from({ length: 196 }, (_, i) => {
-  const base = STRATEGIC_PLANTS[i % STRATEGIC_PLANTS.length];
+  const base = MASTER_INDUSTRIAL_FACILITIES[i % MASTER_INDUSTRIAL_FACILITIES.length];
   return {
-    id: `plant-tier1-${i + 1}`,
-    name: i < STRATEGIC_PLANTS.length ? base.name : `${base.name.split(' ')[0]} Asset ${i + 1}`,
-    lat: base.lat + (((i * 17) % 30 - 15) * 0.015),
-    lng: base.lng + (((i * 23) % 30 - 15) * 0.015),
+    id: `plant-master-${i + 1}`,
+    name: i < MASTER_INDUSTRIAL_FACILITIES.length ? base.name : `${base.name.split(' ')[0]} Facility Unit ${i + 1}`,
+    lat: base.lat + (((i * 17) % 30 - 15) * 0.012),
+    lng: base.lng + (((i * 23) % 30 - 15) * 0.012),
     region: base.region,
     buffer_km: 15
   };
@@ -73,51 +215,45 @@ const getInlandBounds = (lat, rand) => {
   return null;
 };
 
+// Continuous Non-Clustered Telemetry Generator
 const generateContinuousHotspots = () => {
   const detections = [];
   const TOTAL = 2540;
   let id = 1;
-  let seed = 73917;
+  let seed = 91823;
   const nextRand = () => {
     seed = (seed * 16807) % 2147483647;
     return (seed - 1) / 2147483646;
   };
 
-  // Shirpur and surrounding Khandesh zone
-  for (let s = 0; s < 25; s++) {
-    const lat = 21.3504 + (nextRand() - 0.5) * 0.12;
-    const lng = 74.8812 + (nextRand() - 0.5) * 0.12;
-    const isInd = s < 8;
-    const frp = isInd ? Math.floor(85 + nextRand() * 90) : (s < 16 ? Math.floor(65 + nextRand() * 40) : Math.floor(25 + nextRand() * 30));
+  // 1. Mandatory Hotspot for Tata Salt & Chemicals Mithapur Complex
+  detections.push({
+    id: id++,
+    lat: 22.4116 + (nextRand() - 0.5) * 0.02,
+    lng: 68.9950 + (nextRand() - 0.5) * 0.02,
+    frp: Math.floor(92 + nextRand() * 45),
+    brightness: Math.floor(325 + nextRand() * 25),
+    satellite: 'VIIRS_NRT',
+    time: '10:14 UTC',
+    region: 'Gujarat Coastal Chemical Belt',
+    facility_name: 'Tata Chemicals / Tata Salt Mega Complex Mithapur',
+    offset_km: '1.4',
+    is_anomaly: true
+  });
 
-    detections.push({
-      id: id++,
-      lat,
-      lng,
-      frp,
-      brightness: Math.floor(310 + nextRand() * 50),
-      satellite: nextRand() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
-      time: `${String(Math.floor(nextRand() * 14) + 6).padStart(2, '0')}:${String(Math.floor(nextRand() * 60)).padStart(2, '0')} UTC`,
-      region: 'Shirpur Khandesh Industrial Sector',
-      facility_name: isInd ? 'Shirpur Gold Refinery & Heavy Agro Complex' : null,
-      offset_km: isInd ? (nextRand() * 3.5 + 0.5).toFixed(1) : (nextRand() * 20 + 8).toFixed(1),
-      is_anomaly: frp >= 80 || isInd
-    });
-  }
-
-  // Strategic Assets matching (15km buffer)
-  for (let i = 0; i < 400; i++) {
+  // 2. Active detections directly on all 196 Industrial Facilities (15km radius)
+  for (let i = 0; i < 420; i++) {
     const plant = FULL_STRATEGIC_ASSETS[i % FULL_STRATEGIC_ASSETS.length];
-    const lat = plant.lat + (nextRand() - 0.5) * 0.05;
-    const lng = plant.lng + (nextRand() - 0.5) * 0.05;
-    const frpVal = Math.floor(75 + nextRand() * 115);
+    const lat = plant.lat + (nextRand() - 0.5) * 0.04;
+    const lng = plant.lng + (nextRand() - 0.5) * 0.04;
+    const frpVal = Math.floor(78 + nextRand() * 110);
 
     detections.push({
       id: id++,
       lat,
       lng,
       frp: frpVal,
-      brightness: Math.floor(310 + nextRand() * 50),
+      brightness: Math.floor(312 + nextRand() * 45),
       satellite: nextRand() > 0.45 ? 'VIIRS_NRT' : 'MODIS_NRT',
       time: `${String(Math.floor(nextRand() * 14) + 6).padStart(2, '0')}:${String(Math.floor(nextRand() * 60)).padStart(2, '0')} UTC`,
       region: plant.region,
@@ -127,7 +263,7 @@ const generateContinuousHotspots = () => {
     });
   }
 
-  // Mainland Continuous Infiltration
+  // 3. Continuous Mainland Scatter (Wildfires + Agricultural Stubble)
   while (id <= TOTAL) {
     let lat = 6.0 + nextRand() * 26.0;
     let bounds = getInlandBounds(lat, nextRand());
@@ -173,14 +309,14 @@ export default function App() {
   const [selectedHotspot, setSelectedHotspot] = useState(DEFAULT_DETECTIONS[0]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 100% Watermark-Free & Key-Free High-Contrast Tile Servers
+  // 100% Watermark-Free High-Contrast Tile Servers
   const tileUrls = {
     darkEsri: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
     googleHybrid: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
     satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
   };
 
-  // Safe NASA FIRMS Ingestion
+  // Safe Live Ingestion Engine
   useEffect(() => {
     const fetchNASAData = async () => {
       if (!NASA_MAP_KEY || NASA_MAP_KEY === 'YOUR_NASA_MAP_KEY') {
@@ -256,6 +392,7 @@ export default function App() {
     fetchNASAData();
   }, [satelliteSource, timeWindow]);
 
+  // Tactical Search Engine
   const handleLocationSearch = async (e) => {
     if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -263,6 +400,7 @@ export default function App() {
     setIsSearching(true);
     const query = searchQuery.trim().toLowerCase();
 
+    // 1. Check in Master Industrial Facilities (Tata Salt, Shirpur, Jamnagar, Mithapur, etc.)
     const localMatch = FULL_STRATEGIC_ASSETS.find(p => 
       p.name.toLowerCase().includes(query) || p.region.toLowerCase().includes(query)
     );
@@ -270,13 +408,14 @@ export default function App() {
     if (localMatch) {
       setMapTarget({ center: [localMatch.lat, localMatch.lng], zoom: 12 });
       const nearest = hotspots.find(d => 
-        Math.hypot(d.lat - localMatch.lat, d.lng - localMatch.lng) < 0.2
+        Math.hypot(d.lat - localMatch.lat, d.lng - localMatch.lng) < 0.25
       );
       if (nearest) setSelectedHotspot(nearest);
       setIsSearching(false);
       return;
     }
 
+    // 2. Global Tactical Geocoding via Nominatim
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
       const data = await res.json();
@@ -391,7 +530,7 @@ export default function App() {
             <div style={{ display: 'flex', gap: '4px' }}>
               <input 
                 type="text" 
-                placeholder="Search Shirpur, Jamnagar..." 
+                placeholder="Search Tata, Mithapur, Shirpur..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ width: '100%', backgroundColor: '#0F172A', border: '1px solid #1E293B', borderRadius: '4px', padding: '6px 8px', color: '#FFF', fontSize: '11px', outline: 'none' }}
